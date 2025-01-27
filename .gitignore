@@ -24,6 +24,7 @@ node_modules
 FrontEnd/node_modules/
 FrontEnd/dist
 FrontEnd/venv/
+/FrontEnd/android/.gradle
 
 # All Env Files
 *.env
