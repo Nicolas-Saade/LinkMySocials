@@ -43,9 +43,11 @@ You can use the provided test files or any output from a Gumloop scraping node.
  ## **Sample Test: Web Scraper Regex Formatting**
 
 ### **Input (Raw Scraped Data + URL)**
-```json
+```python
 url = https://www.tiktok.com/@kagan_dunlap/video/7452784466923228458
+```
 
+```json
 {
   "text": "Insurance Premiums for Trucks Transporting Fighter Jets | TikTok TikTokLog inTikTokSearchFor YouExploreFollowingUpload LIVEProfileMoreLog inCompanyProgramTerms & Policies© 2025 TikTok198.6K19048659397500:02 / 00:08kagan_dunlapKagan Dunlap · 2024-12-26FollowmoreHow high are the insurance premiums for a truck carrying a fighter jet? Shirt by @GruntStyle
 #fyp
