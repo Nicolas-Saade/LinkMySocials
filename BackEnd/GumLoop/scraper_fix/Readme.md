@@ -18,7 +18,7 @@ cd BackEnd/GumLoop/scraper_fix
 ```bash
 python3 -m venv venv
 source venv/bin/activate  # On Windows use: venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r ../../../requirements.txt
 ```
 
 Create a .env file at the same level as RegExNode.py and RegExNodeNoAI.py, then add the following line:
