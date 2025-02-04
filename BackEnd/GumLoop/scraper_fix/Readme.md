@@ -91,11 +91,11 @@ rd #spaceforce #soldier #kagandunlap kagan_dunlap21.6K·2d ago DHS and the Penta
 ```
 
 ### **Input Regex Parameters/Patterns**
-```json
-[
-    {"field_name": "mentions","pattern": "@([\\w\\.-]+)","all_matches": true, "AI_Prompt": null},
-    {"field_name": "AI_mentions", "pattern": null, "all_matches": true, "AI_Prompt": "Extract all mentions of creators (basically @USERNAME) from the text"}
-]
+```python
+    regex_params = [
+            '{"field_name": "mentions","pattern": "@([\w\.-]+)","all_matches": True, "AI_Prompt": None}',
+            '{"field_name": "AI_mentions", "pattern": None, "all_matches": True, "AI_Prompt": "Extract all mentions of creators (basically @USERNAME) from the text"}',
+        ]
 ```
 
 ### **Formatted Output**
