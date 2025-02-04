@@ -43,6 +43,9 @@ You can use the provided test files or any output from a Gumloop scraping node.
  ## **Sample Test: Web Scraper Regex Formatting**
 
 ### **Input (Raw Scraped Data + URL)**
+
+N.B: The tool currently only supports Automated regex pattern matching with TikTok and Instagram video URLs. You can always define your own regex patterns or prompt the LLM to define these patterns for you.
+
 ```python
 url = "https://www.tiktok.com/@kagan_dunlap/video/7452784466923228458"
 ```
