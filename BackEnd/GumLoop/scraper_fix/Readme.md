@@ -44,7 +44,7 @@ You can use the provided test files or any output from a Gumloop scraping node.
 
 ### **Input (Raw Scraped Data + URL)**
 ```python
-url = https://www.tiktok.com/@kagan_dunlap/video/7452784466923228458
+url = "https://www.tiktok.com/@kagan_dunlap/video/7452784466923228458"
 ```
 
 ```python
