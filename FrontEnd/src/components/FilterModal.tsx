@@ -10,6 +10,10 @@ import {
   ScrollView 
 } from 'react-native';
 import { colors, typography, borderRadius, shadows } from '../theme';
+import FacebookLogo from '../assets/Facebook-logo-reg.png';
+import InstaLogo from '../assets/Insta-logo-reg.png';
+import XLogo from '../assets/X-logo-reg.webp';
+import RedditLogo from '../assets/reddit-logo-reg.png';
 
 interface FilterModalProps {
   visible: boolean;
@@ -27,22 +31,22 @@ const platforms: PlatformOption[] = [
   { 
     id: 'facebook', 
     name: 'Facebook', 
-    icon: require('../assets/Facebook-logo-reg.png') 
+    icon: FacebookLogo as ImageSourcePropType
   },
   { 
     id: 'instagram', 
     name: 'Instagram', 
-    icon: require('../assets/Insta-logo-reg.png') 
+    icon: InstaLogo as ImageSourcePropType
   },
-  { 
+  {
     id: 'x', 
     name: 'X', 
-    icon: require('../assets/X-logo-reg.webp') 
+    icon: XLogo as ImageSourcePropType
   },
   { 
     id: 'reddit', 
     name: 'Reddit', 
-    icon: require('../assets/reddit-logo-reg.png') 
+    icon: RedditLogo as ImageSourcePropType
   },
 ];
 
