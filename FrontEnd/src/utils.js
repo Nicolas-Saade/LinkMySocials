@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Platform, Linking } from 'react-native';
 
-const AWS_BASE_URL = 'http://127.0.0.1:8000/' ; /*'https://link-my-socials.com/'; 'http://127.0.0.1:8000/; */
+const AWS_BASE_URL = 'https://link-my-socials.com/' ; /*'https://link-my-socials.com/'; 'http://127.0.0.1:8000/; */
 
 // Determine the base URL
 const API_BASE_URL =
