@@ -18,9 +18,10 @@ import ProfileBox from '../components/ProfileBox';
 import CustomProfileBox from '../components/UserProfileBox';
 import { api } from '../utils';
 import { useDropzone } from 'react-dropzone';
-import { createRoot } from 'react-dom/client'
+import { createRoot } from 'react-dom/client';
 import SearchBar from '../components/SearchBar';
 import AlertModal from '../components/NotLoggedInAdding';
+import OverwriteAlertModal from '../components/NotLoggedInOverwriting';
 import FilterModal from '../components/FilterModal';
 import { colors, typography, borderRadius, shadows } from '../theme';
 import LoginModal from '../components/LogInModal';
@@ -50,6 +51,12 @@ const App = ({/*route,*/ navigation }) => {
   const [profileImagePreview, setProfileImagePreview] = useState(null);
 
   const [showAlertModal, setShowAlertModal] = useState(false);
+  const [showOverwriteAlertModal, setShowOverwriteAlertModal] = useState(false);
+  const [alertModalConfig, setAlertModalConfig] = useState({
+    title: '',
+    message: '',
+    buttons: []
+  }); // TODO: Maybe also add an alert for going from logged in to not logged in (if you had drtopped a file you now deleted)
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [algoResults, setAlgoResults] = useState({}); // Store algorithm ranking dict
   const [sortOn, setSortOn] = useState(false); // State for sorting profiles
@@ -212,46 +219,6 @@ const App = ({/*route,*/ navigation }) => {
     setShowLoginModal(true); // Open the modal
   };
 
-  const handleCheckEmail = async () => {
-    const emailInput = email.trim(); // Ensure email input is trimmed
-    const passwordInput = password.trim(); // Ensure password input is trimmed
-    if (!emailInput || !passwordInput) {
-        Alert.alert('Error', 'Please enter both email and password.');
-        return;
-    }
-
-    try {
-        // Send API request to check if email exists in the database
-        const response = await api.post('/api/check-email/', { email: emailInput, password: passwordInput });
-
-        if (response.status === 200) {
-            const user = response.data;
-            
-            Alert.alert('Success', 'Login successful!');
-            setIsLoggedIn(true); // Set user as logged in
-            setAccountName(`${user.first_name} ${user.last_name}`); // Update account name
-            setShowLoginModal(false); // Close the login modal
-            setPassword(''); // Clear the password field
-
-            // Fetch and display the following list if the JSON file exists and is not empty
-            if (user.json_file && Object.keys(user.json_file).length > 0) {
-                processFollowingFromJson(user.json_file);
-            } 
-        } else {
-            Alert.alert('Error', 'Unexpected response from the server.');
-        }
-    } catch (error) {
-        if (error.response && error.response.status === 404) {
-            // Email not found
-            Alert.alert('Error', 'Email not found. Please register first.');
-        } else {
-            console.error('Error checking email:', error.message);
-            Alert.alert('Error', 'Incorrect password or Email. Please try again.');
-        }
-    }
-  };
-
-
   const processFollowingFromJson = async (jsonFile) => {
     try {
       if (!jsonFile || Object.keys(jsonFile).length === 0) {
@@ -263,7 +230,7 @@ const App = ({/*route,*/ navigation }) => {
       const followingList = profile["Following List"]?.Following || [];
 
       if (followingList.length === 0) {
-        Alert.alert('Notice', 'No "following" data found in your JSON file.');
+        Alert.alert('Notice', 'No "following" data found in JSON file.');
         return;
       }
 
@@ -392,139 +359,130 @@ const App = ({/*route,*/ navigation }) => {
 
   }
 
-  //hanlde account registration
-  const handleRegister = async (firstName, lastName, email, password, file) => {
-    try {
-      const formData = new FormData();
-      formData.append('first_name', firstName);
-      formData.append('last_name', lastName);
-      formData.append('email', email);
-      formData.append('password', password);
-
-      if (file) {
-        formData.append('json_file', {
-          uri: file.uri,
-          name: file.name,
-          type: file.type,
-        });
-      }
-
-      const response = await api.post('/api/create-user-profile/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      if (response.status === 201) {
-        Alert.alert('Success', 'Account created successfully!');
-        setShowRegisterModal(false); // Close the modal
-        setIsLoggedIn(true); // Mark user as logged in
-        setFirstName('');
-        setLastName('');
-        setEmail('');
-        setPassword('');
-        setAccountName(firstName + ' ' + lastName); // Optionally set the user's name
-        setEmail(email);
-        // Check for JSON file and process it
-        if (response.data.json_file && Object.keys(response.data.json_file).length > 0) {
-          processFollowingFromJson(response.data.json_file);
-        }
-      } else {
-        Alert.alert('Error', 'Unexpected response from the server.');
-      }
-    } catch (error) {
-      if (error.response) {
-        console.error('Error response:', error.response.data);
-        Alert.alert('Error', error.response.data.error || 'Failed to create account.');
-      } else {
-        console.error('Error:', error.message);
-        Alert.alert('Error', 'A network error occurred. Please try again.');
-      }
-    }
-  };
-
-
   // PlaceHolder for file drop
   const handleFileDrop = async () => {
+
+    if (allProfiles.length > 0) {
+      const confirmOverwrite = await new Promise((resolve) => {
+        setShowOverwriteAlertModal(true);
+        setAlertModalConfig({
+          title: "Warning: Existing Data",
+          message: "You currently have profile data loaded in your account. Uploading a new file may overwrite your existing data. Would you like to proceed?",
+          buttons: [
+            {
+              text: "Cancel",
+              style: "secondary",
+              onPress: () => {
+                setShowOverwriteAlertModal(false);
+                resolve(false);
+              }
+            },
+            {
+              text: "Continue", 
+              style: "primary",
+              onPress: () => {
+                setShowOverwriteAlertModal(false);
+                resolve(true);
+              }
+            }
+          ]
+        });
+      });
+
+      if (!confirmOverwrite) {
+        return;
+      }
+    }
+
     const file = await handleFileSelect();
     let response = null;
     const formData = new FormData();
 
     try {
-        if (file) {
-
-            if (Platform.OS === 'web') {
-                formData.append('file', file);
-            } else {
-                formData.append('file', {
-                    uri: file.uri,
-                    name: file.name,
-                    type: file.type,
-                });
-            }
-
-            // Include user email if logged in
-            if (email) {
-                formData.append('email', email);
-            }
-
-            response = await api.post('/api/upload-json/', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-
-            if (response?.status === 200) {
-                Alert.alert('Success', response.data?.message || `File "${file.name}" uploaded successfully!`);
-            } else {
-                console.error('Error response:', response?.data);
-                Alert.alert('Error', response?.data?.error || 'An error occurred while uploading the file.');
-                return;
-            }
-            
-          if (isLoggedIn) {
-            let file_type = undefined;
-            if (file.type === 'application/json') {
-              file_type = 'json';
-            }
-            else {
-              file_type = 'png';
-            }
-            try {
-              // Call the backend to generate pre-signed URLs
-              response = await fetch(`/aws/generate_presigned_url/${email}/${file_type}/`, {
-                  method: 'POST',
-              });
-      
-              if (!response.ok) {
-                  throw new Error('Failed to generate presigned URLs');
-              }
-      
-              const data = await response.json();
-      
-              // Upload file to both user-specific and general folders
-              await fetch(data.user_presigned_url, {
-                  method: 'PUT',
-                  headers: {
-                      'Content-Type': file.type, // Ensure correct MIME type
-                  },
-                  body: file
-              });
-      
-              await fetch(data.general_presigned_url, {
-                  method: 'PUT',
-                  headers: {
-                      'Content-Type': file.type, // Ensure correct MIME type
-                  },
-                  body: file
-              });
-      
-          } catch (error) {
-              console.error('Error uploading file:', error);
-          }
-        }
-
-        } else {
+        if (!file) {
             Alert.alert('Error', 'No file was selected.');
             return;
+        }
+
+        if (Platform.OS === 'web') {
+            formData.append('file', file);
+        } else {
+            formData.append('file', {
+                uri: file.uri,
+                name: file.name,
+                type: file.type,
+            });
+        }
+
+        // Make sure email is properly encoded in the URL if it exists
+        const encodedEmail = email ? encodeURIComponent(email) : null;
+        
+        // Process the JSON file - use different endpoints based on login status
+        const uploadUrl = encodedEmail ? `/api/upload-json/${encodedEmail}/` : '/api/upload-json/';
+        response = await api.post(uploadUrl, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            }
+        });
+
+        if (response?.status === 200) {
+            Alert.alert('Success', response.data?.message || `File "${file.name}" uploaded successfully!`);
+        } else {
+            console.error('Error response:', response?.data);
+            Alert.alert('Error', response?.data?.error || 'An error occurred while uploading the file.');
+            return;
+        }
+            
+        // Only proceed with S3 upload if user is logged in
+        if (isLoggedIn && encodedEmail) {
+            const file_type = file.type === 'application/json' ? 'json' : 'png';
+            
+            console.log("FILE TYPE", file_type)
+            try {
+                // Call the backend to generate pre-signed URLs
+                const s3Response = await api.post(`/aws/generate_presigned_url/${encodedEmail}/${file_type}/`);
+                
+                if (!s3Response.data) {
+                    throw new Error('Failed to generate presigned URLs');
+                }
+
+                const { user_presigned_url, general_presigned_url } = s3Response.data;
+
+                // Upload file to user-specific folder
+                const userUploadResponse = await fetch(user_presigned_url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': file.type,
+                    },
+                    body: file
+                });
+
+                if (!userUploadResponse.ok) {
+                    throw new Error('Failed to upload to user folder');
+                }
+
+                // Upload file to general folder
+                const generalUploadResponse = await fetch(general_presigned_url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': file.type,
+                    },
+                    body: file
+                });
+
+                if (!generalUploadResponse.ok) {
+                    throw new Error('Failed to upload to general folder');
+                }
+
+                Alert.alert('Success', 'File uploaded successfully to S3 and processed!');
+            } catch (s3Error) {
+                console.error('S3 upload error:', s3Error);
+                Alert.alert(
+                    'Warning',
+                    'File was processed but failed to upload to S3. Please try uploading again.'
+                );
+                return;
+            }
         }
     } catch (error) {
         console.error('File upload error:', error.message);
@@ -898,6 +856,7 @@ const App = ({/*route,*/ navigation }) => {
         onClose={() => setShowLoginModal(false)}
         onLoginSuccess={(userData) => {
           setIsLoggedIn(true);
+          setEmail(userData.email);
           setAccountName(`${userData.first_name} ${userData.last_name}`);
           if (userData.json_file && Object.keys(userData.json_file).length > 0) {
             processFollowingFromJson(userData.json_file);
@@ -1021,6 +980,14 @@ const App = ({/*route,*/ navigation }) => {
           </View>
         </View>
       )}
+
+      {/* Add this near your other modals */}
+      <OverwriteAlertModal
+        visible={showOverwriteAlertModal}
+        title={alertModalConfig.title}
+        message={alertModalConfig.message}
+        buttons={alertModalConfig.buttons}
+      />
 
     </SafeAreaView>
 

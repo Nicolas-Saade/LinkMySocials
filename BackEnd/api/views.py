@@ -12,6 +12,9 @@ import json
 from django.shortcuts import render
 from django.core.mail import send_mail
 from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+import os
 
 def index_view(request):
     return render(request, "index.html")
@@ -37,6 +40,7 @@ def check_email(request):
 
                 return Response({
                     "message": "Email exists.",
+                    "email": user.get("email"),
                     "first_name": user.get("first_name"),
                     "last_name": user.get("last_name"),
                     "password": user.get("password"),  # Include the stored password
@@ -51,56 +55,71 @@ def check_email(request):
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser])  # Enable file upload and parsing
-def upload_json_file(request):
-    """API to handle JSON file upload and optionally associate it with a user's email."""
-    # Get the user's email from the request (optional)
-    print("Entering API")
-    user_email = request.data.get('email')
+def upload_json_file(request, email=None):  # Make email parameter optional
+    """
+        API to handle JSON file upload.
+        If the user is logged in, the JSON file is associated with the user's email in the database.
+        If the user is not logged in, the JSON file is processed but not associated with any user.
+        If the user is logged in The JSON file is stored in S3 and the S3 path is stored in the database.
 
+    """
+    user_email = email  # Get email from URL parameter
     uploaded_file = request.FILES.get('file', None)
-    if not uploaded_file:
-        return Response({"error": " file provided."}, status=400)
 
-    print("AIAIAIAIAAI")
+    if not uploaded_file:
+        return Response({"error": "No file provided."}, status=400)
 
     try:
         # Read and parse the uploaded JSON file
         file_data = uploaded_file.read().decode('utf-8')
         json_data = json.loads(file_data)
+        
         # Extract "following" list from the JSON (if present)
         profile = json_data.get("Profile", {})
         following_list = profile.get("Following List", {}).get("Following", [])
 
         if not following_list:
+            # Dealing with different JSON file formats
             profile = json_data.get("Activity", {})
             following_list = profile.get("Following List", [])
 
         if not following_list:
             return Response({"error": "No 'Following' found in the JSON file."}, status=400)
 
-        # If user_email is provided, associate the JSON file with the user's database entry
+        # If user_email is provided, handle file storage, database update
         if user_email:
             response = supabase.table("user_profile").select("*").eq("email", user_email).execute()
             if not response.data:
                 return Response({"error": "User not found."}, status=404)
 
-            # Update the user's database entry with the JSON file
-            update_response = supabase.table("user_profile").update({"json_file": json_data}).eq("email", user_email).execute()
+            try:
+                # Create the S3 path for the user's JSON file
+                s3_path = f'Users/{user_email}/TikTokData/tiktok-data.json'
 
-            if not update_response.data:
-                return Response({"error": "Failed to update the database entry for the user."}, status=500)
+                # Update the user's database entry with the JSON file
+                update_response = supabase.table("user_profile").update({
+                    "json_file": json_data,
+                    "s3_json_path": s3_path  # Store the S3 path in the database
+                }).eq("email", user_email).execute()
 
-            return Response({
-                "message": "JSON file successfully uploaded and associated with the user.",
-                "following": following_list
-            }, status=200)
+                if not update_response.data:
+                    return Response({"error": "Failed to update the database entry for the user."}, status=500)
 
-        # If no email is provided, process the file but don't save it to the database
+                return Response({
+                    "message": "JSON file successfully processed and associated with the user.",
+                    "following": following_list,
+                    "s3_path": s3_path
+                }, status=200)
+            except Exception as e:
+                return Response({
+                    "error": f"Failed to process file: {str(e)}",
+                }, status=500)
+
+        # If no email is provided, just process the file without saving
         return Response({
-            "message": "JSON file successfully uploaded but not associated with any user (not logged in).",
+            "message": "JSON file successfully processed but not stored (no user email provided).",
             "following": following_list
         }, status=200)
-
     except json.JSONDecodeError:
         return Response({"error": "Invalid JSON file."}, status=400)
     except Exception as e:
