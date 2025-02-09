@@ -44,7 +44,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
         onLoginSuccess(response.data);
         setPassword(''); // Clear password for security
         onClose();
-        console.log("RESPONSE", response.data)
       }
     } catch (err: any) {
       if (err.response?.status === 404) {

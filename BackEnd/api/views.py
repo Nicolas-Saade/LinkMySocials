@@ -69,6 +69,8 @@ def upload_json_file(request, email=None):  # Make email parameter optional
     if not uploaded_file:
         return Response({"error": "No file provided."}, status=400)
 
+    print("AIAIAIAIAAI")
+
     try:
         # Read and parse the uploaded JSON file
         file_data = uploaded_file.read().decode('utf-8')
