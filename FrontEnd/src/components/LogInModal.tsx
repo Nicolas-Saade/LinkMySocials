@@ -34,6 +34,7 @@ const LoginModal: React.FC<LoginModalProps> = ({
         return;
       }
 
+      //! Very bad naming, this checks email AND returns user data from DB
       const response = await api.post('/api/check-email/', { 
         email: email.trim(), 
         password: password.trim() 

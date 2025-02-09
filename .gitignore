@@ -49,4 +49,7 @@ BackEnd/BackEnd/db.sqlite3
 FrontEnd/dist/
 BackEnd/Database/null_account_fixing.py
 
+BackEnd/api/Saade_!Fulll.json
+BackEnd/api/Saade_Full.json
+
 AWSCLIV2.pkg
