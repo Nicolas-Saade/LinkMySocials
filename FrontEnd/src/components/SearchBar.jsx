@@ -1,23 +1,16 @@
-import React, { useState } from 'react';
-import { TextInput, View, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, TextInput, StyleSheet, Platform } from 'react-native';
+import { colors, typography, borderRadius, shadows } from '../theme';
 
-const SearchBar = ({ onSearch }) => {
-  const [query, setQuery] = useState('');
-
-  const handleSearch = (text) => {
-    setQuery(text);
-    if (onSearch) {
-      onSearch(text);
-    }
-  };
-
+const SearchBar = ({ onSearch, placeholder, style }) => {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       <TextInput
         style={styles.input}
-        placeholder="Search..."
-        value={query}
-        onChangeText={handleSearch}
+        placeholder={placeholder}
+        placeholderTextColor={colors.secondaryText}
+        onChangeText={onSearch}
+        returnKeyType="search"
         autoCapitalize="none"
         autoCorrect={false}
       />
@@ -26,18 +19,22 @@ const SearchBar = ({ onSearch }) => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        margin: 10,
-        padding: 5,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        backgroundColor: '#fff',
-    },
-    input: {
-        fontSize: 14,
-        padding: 8,
-    },
+  container: {
+    flex: 1,
+    maxWidth: 400,
+    marginHorizontal: 15,
+  },
+  input: {
+    backgroundColor: colors.secondaryBg,
+    color: colors.primaryText,
+    fontSize: typography.body.fontSize,
+    paddingHorizontal: 16,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    ...shadows.sm,
+  },
 });
 
 export default SearchBar;

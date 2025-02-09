@@ -170,9 +170,3 @@ def main(MetaData, params):
 
     # Return the individual variables as a tuple
     return tiktok_url, creator_name, creator_handle, title, description, formatted_hashtags, likes_count, comments_count, formatted_keywords
-
-if __name__ == "__main__":
-    # Example usage
-    MetaData = "data-test"
-    params = {}
-    result = main(MetaData, params)

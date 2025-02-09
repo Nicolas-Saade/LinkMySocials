@@ -1,0 +1,59 @@
+{
+  "basic": {
+    "title": "Gaddafi's Last Video: Understanding Libya's Reaction to Potential American War | TikTok",
+    "charset": "UTF-8",
+    "viewport": "width=device-width,initial-scale=1",
+    "format-detection": "telephone=no",
+    "google": "notranslate"
+  },
+  "language": {
+    "html_lang": "en",
+    "direction": "ltr"
+  },
+  "robots": {
+    "content": "index, follow, max-image-preview:large"
+  },
+  "device": {
+    "applicable-device": "pc, mobile"
+  },
+  "social": {
+    "og": {
+      "site_name": "TikTok",
+      "type": "website", 
+      "title": "👑GADDAFI👑 on TikTok",
+      "description": "war of course 💪💪✌️🟩#foryou #foryoupage #gaddafi3438 #Libya #leader #tiktok ",
+      "url": "https://www.tiktok.com/@gaddafi3438/video/7391819905080823045"
+    },
+    "fb": {
+      "app_id": "597615686992125"
+    },
+    "twitter": {
+      "card": "summary",
+      "site": "TikTok",
+      "title": "👑GADDAFI👑 on TikTok",
+      "description": "war of course 💪💪✌️🟩#foryou #foryoupage #gaddafi3438 #Libya #leader #tiktok ",
+      "app": {
+        "id": {
+          "iphone": "835599320",
+          "googleplay": "com.zhiliaoapp.musically"
+        }
+      }
+    }
+  },
+  "mobile_app": {
+    "al:ios:url": "snssdk1233://aweme/detail/7391819905080823045?undefined",
+    "al:android:url": "snssdk1233://aweme/detail/7391819905080823045?undefined",
+    "al:ios:app_store_id": "835599320",
+    "al:ios:app_name": "musical.ly",
+    "al:android:app_name": "musical.ly",
+    "al:android:package": "com.zhiliaoapp.musically"
+  },
+  "missing_recommended": [
+    "og:image dimensions",
+    "canonical URL",
+    "meta keywords",
+    "author information",
+    "article publish date",
+    "schema.org structured data"
+  ]
+}

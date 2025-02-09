@@ -1,0 +1,49 @@
+{
+  "basic": {
+    "title": "Getting Trained at a Union Construction Site | TikTok",
+    "charset": "UTF-8",
+    "viewport": "width=device-width,initial-scale=1",
+    "format-detection": "telephone=no",
+    "google": "notranslate"
+  },
+  "opengraph": {
+    "site_name": "TikTok",
+    "type": "website", 
+    "title": "Tony Dabas on TikTok",
+    "description": "Being the new guy sucks in any union #Union #Comedy #Construction #Work #ExplorePage #FYP #Contractor",
+    "url": "https://www.tiktok.com/@tonydcomedy/video/7397829687193521439",
+    "fb:app_id": "597615686992125"
+  },
+  "twitter": {
+    "card": "summary",
+    "site": "TikTok",
+    "title": "Tony Dabas on TikTok",
+    "description": "Being the new guy sucks in any union #Union #Comedy #Construction #Work #ExplorePage #FYP #Contractor",
+    "app": {
+      "id": {
+        "iphone": "835599320",
+        "googleplay": "com.zhiliaoapp.musically"
+      }
+    }
+  },
+  "mobile": {
+    "al:ios:url": "snssdk1233://aweme/detail/7397829687193521439?undefined",
+    "al:android:url": "snssdk1233://aweme/detail/7397829687193521439?undefined",
+    "al:ios:app_store_id": "835599320",
+    "al:ios:app_name": "musical.ly",
+    "al:android:app_name": "musical.ly",
+    "al:android:package": "com.zhiliaoapp.musically"
+  },
+  "seo": {
+    "keywords": "Union Construction, Construction Worker, Construction TikTok, Construction, Construction Videos, Building Construction, Construction Life, Construction Projects, Construction Jobs, Contractor",
+    "description": "408.2K Likes, 1753 Comments. TikTok video from Tony Dabas (@tonydcomedy): \"Experience being the new guy at a construction union job. Follow along as the senior worker guides you through the daily routines and challenges. #Union #Construction #Work #ExplorePage\"",
+    "robots": "index, follow, max-image-preview:large",
+    "applicable-device": "pc, mobile"
+  },
+  "missing_recommended": [
+    "og:image dimensions",
+    "twitter:image",
+    "article:published_time",
+    "article:author"
+  ]
+}

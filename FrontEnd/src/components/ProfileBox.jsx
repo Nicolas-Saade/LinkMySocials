@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { colors, typography, borderRadius, shadows } from '../theme';
 import { openUrl } from '../utils';
 import facebookIcon from '../assets/Facebook-logo-reg.png'; // Regular Facebook icon
 import facebookIconPlaceholder from '../assets/facebook-logo-not.png'; // Placeholder for missing URL
@@ -7,7 +8,7 @@ import instagramIcon from '../assets/Insta-logo-reg.png'; // Regular Instagram i
 import instagramIconPlaceholder from '../assets/Insta-logo-not.png'; // Placeholder for missing URL
 import twitterIcon from '../assets/X-logo-reg.webp'; // Regular X (Twitter) icon
 import twitterIconPlaceholder from '../assets/X-logo-not.png'; // Placeholder for missing URL
-import redditIcon from '../assets/reddit-logo-reg.webp'; // Regular Reddit icon
+import redditIcon from '../assets/reddit-logo-reg.png'; // Regular Reddit icon
 import redditIconPlaceholder from '../assets/reddit-logo-not.png'; // Placeholder for missing URL
 import placeHolder from '../assets/Neutral-placeholder-profile.jpg';
 
@@ -17,19 +18,21 @@ const ProfileBox = ({ name, profilePicture, instagramUrl, facebookUrl, twitterUr
     <View style={styles.box}>
       <View style={styles.row}>
         {/* Profile Picture */}
-        <Image 
-          source={{ uri: profilePicture || placeHolder }} // Placeholder for profile picture
-          style={styles.image} 
-        />
+        <View style={styles.imageContainer}>
+          <Image 
+            source={{ uri: profilePicture || placeHolder }} // Placeholder for profile picture
+            style={styles.image} 
+          />
+        </View>
         {/* Social Media Icons */}
         <View style={styles.iconsContainer}>
           <TouchableOpacity 
-              onPress={() => facebookUrl && openUrl(facebookUrl)} 
-              disabled={!facebookUrl} // Disable button if URL is null
+            onPress={() => facebookUrl && openUrl(facebookUrl)} 
+            disabled={!facebookUrl} // Disable button if URL is null
           >
             <Image 
               source={facebookUrl ? facebookIcon : facebookIconPlaceholder} 
-              style={styles.icon} 
+              style={[styles.icon, !facebookUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -38,7 +41,7 @@ const ProfileBox = ({ name, profilePicture, instagramUrl, facebookUrl, twitterUr
           >
             <Image 
               source={instagramUrl ? instagramIcon : instagramIconPlaceholder} 
-              style={styles.icon} 
+              style={[styles.icon, !instagramUrl && styles.placeholderIcon, { resizeMode: 'contain' }]} 
             />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -47,7 +50,7 @@ const ProfileBox = ({ name, profilePicture, instagramUrl, facebookUrl, twitterUr
           >
             <Image 
               source={twitterUrl ? twitterIcon : twitterIconPlaceholder} 
-              style={styles.icon} 
+              style={[styles.icon, !twitterUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -56,56 +59,73 @@ const ProfileBox = ({ name, profilePicture, instagramUrl, facebookUrl, twitterUr
           >
             <Image 
               source={redditUrl ? redditIcon : redditIconPlaceholder} 
-              style={styles.icon} 
+              style={[styles.icon, !redditUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
         </View>
       </View>
       {/* Username */}
-      <Text style={styles.name}>{name}</Text>
+      <Text 
+        style={styles.name}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+      >
+        {name}
+      </Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   box: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 10,
-    padding: 10,
+    backgroundColor: colors.secondaryBg,
+    borderRadius: borderRadius.lg,
+    padding: 15,
     marginBottom: 15,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 5,
+    width: '100%',
+    minHeight: 160,
+    ...shadows.md,
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'center', // Centers content vertically
-    justifyContent: 'space-between', // Adds spacing between the picture and icons
+    alignItems: 'center',
+    justifyContent: 'space-between',
     width: '100%',
+    paddingHorizontal: 5,
+  },
+  imageContainer: {
+    marginRight: 15,
   },
   image: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginLeft: 20,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.secondaryBg,
   },
   name: {
-    fontSize: 16,
+    color: colors.primaryText,
+    fontSize: typography.body.fontSize,
     fontWeight: 'bold',
-    marginTop: 10,
-    textAlign: 'center', // Centers text horizontally
+    marginTop: 20,
+    textAlign: 'center',
+    maxWidth: '90%',
   },
   iconsContainer: {
     flexDirection: 'column',
-    justifyContent: 'space-around', // Spreads out icons vertically,
-
+    justifyContent: 'space-around',
+    height: 80,
+    paddingVertical: 5,
+    marginRight: 10,
   },
   icon: {
-    width: 24,
-    height: 24,
-    marginBottom: 5,
+    width: 20,
+    height: 20,
+    marginBottom: 3,
+    backgroundColor: 'transparent',
+  },
+  placeholderIcon: {
+    opacity: 0.7,
   },
 });
 

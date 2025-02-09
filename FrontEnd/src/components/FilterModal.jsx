@@ -4,7 +4,7 @@ import { Modal, View, Text, TouchableOpacity, StyleSheet, Image } from 'react-na
 // Importing images
 import FacebookLogo from '../assets/Facebook-logo-reg.png';
 import InstagramLogo from '../assets/Insta-logo-reg.png';
-import RedditLogo from '../assets/reddit-logo-reg.webp';
+import RedditLogo from '../assets/reddit-logo-reg.png';
 import XLogo from '../assets/X-logo-reg.webp';
 import { ScrollView } from 'react-native-web';
 

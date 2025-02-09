@@ -7,10 +7,17 @@
 
      <!-- Inline style to override min-height -->
     <style>
-    .css-175oi2r.r-13awgt0 {
-        min-height: auto !important;
-    }
-  </style>
+      html, body, #root {
+        height: 100vh;
+        margin: 0;
+        padding: 0;
+        background-color: #121212;
+      }
+      #root {
+        display: flex;
+        flex-direction: column;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div> <!-- Root element where React mounts -->
