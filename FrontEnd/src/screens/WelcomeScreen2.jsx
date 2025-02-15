@@ -1,40 +1,72 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Linking, ScrollView, Platform } from 'react-native';
+import { colors, typography, spacing, shadows, borderRadius } from '../theme';
 
 const WelcomeScreen2 = ({ navigation }) => {
-  const goToHomeScreen = () => {
-    navigation.navigate('HomeScreen');
-  };
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to the App! 🎉</Text>
-      <Text style={styles.subtitle}>
-        Here's everything you need to get started:
-      </Text>
+      <View style={styles.gradientOverlay} />
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>Let's Get Started! 🎉</Text>
+        <Text style={styles.subtitle}>
+          Follow these simple steps to migrate your TikTok data
+        </Text>
 
-      {/* Instructions Section */}
-      <Text style={styles.sectionTitle}> 4 Steps to Migrate Your Preferences:</Text>
-      <View style={styles.stepsContainer}>
-        <Text style={styles.step}>1. Open your TikTok App on Profile, click the button with three straight lines (top right)</Text>
-        <Text style={styles.step}>2. Settings and Privacy → Account → Download your data</Text>
-        <Text style={styles.step}>3. Select data to download: Profiles and posts + Activity. Select File Format JSON</Text>
-        <Text style={styles.step}>4. Request Data wait a few seconds and then go to the Download Data tab, click download</Text>
-        <Text style={styles.step}>5. Go to the next page, send us your file (top right next page) and we take care of the rest.</Text>
-      </View>
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>4 Easy Steps to Freedom 🚀</Text>
+          <View style={styles.stepsContainer}>
+            <View style={styles.step}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>1</Text>
+              </View>
+              <Text style={styles.stepText}>
+                Open your TikTok Profile and tap the menu button (≡) in the top right
+              </Text>
+            </View>
+            <View style={styles.step}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>2</Text>
+              </View>
+              <Text style={styles.stepText}>
+                Navigate to Settings and Privacy → Account → Download your data
+              </Text>
+            </View>
+            <View style={styles.step}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>3</Text>
+              </View>
+              <Text style={styles.stepText}>
+                Select "Profiles and posts + Activity" and choose JSON format
+              </Text>
+            </View>
+            <View style={styles.step}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>4</Text>
+              </View>
+              <Text style={styles.stepText}>
+                Request data, wait a moment, then download from the Download Data tab
+              </Text>
+            </View>
+          </View>
+        </View>
 
-      {/* Video Tutorial Section */}
-      <Text style={styles.sectionTitle}>🎥 Prefer Watching?</Text>
-      <Text
-        style={styles.link}
-        onPress={() => Linking.openURL('https://example.com/tutorial')}
-      >
-        Watch the Tutorial Video
-      </Text>
+        <View style={styles.videoSection}>
+          <Text style={styles.videoTitle}>Need a Visual Guide? 🎥</Text>
+          <TouchableOpacity
+            style={styles.watchButton}
+            onPress={() => Linking.openURL('https://example.com/tutorial')}
+          >
+            <Text style={styles.watchButtonText}>Watch Tutorial Video</Text>
+          </TouchableOpacity>
+        </View>
 
-      <TouchableOpacity style={styles.button} onPress={goToHomeScreen}>
-        <Text style={styles.buttonText}>Migrate My Data</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.migrateButton}
+          onPress={() => navigation.navigate('HomeScreen')}
+        >
+          <Text style={styles.migrateButtonText}>Start Migration</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 };
@@ -42,61 +74,108 @@ const WelcomeScreen2 = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 30,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: colors.primaryBg,
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '30%',
+    opacity: 0.1,
+    backgroundColor: colors.neonBlue,
+    ...(Platform.OS === 'web' && {
+      backgroundImage: `linear-gradient(135deg, ${colors.neonBlue}, ${colors.neonPink}, ${colors.neonPurple})`,
+    }),
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: spacing.xl,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    ...typography.h1,
+    color: colors.primaryText,
+    marginBottom: spacing.md,
     textAlign: 'center',
-    color: '#333',
   },
   subtitle: {
-    fontSize: 18,
-    lineHeight: 28,
+    ...typography.h3,
+    color: colors.secondaryText,
     textAlign: 'center',
-    marginBottom: 20,
-    color: '#555',
+    marginBottom: spacing.xl,
+  },
+  card: {
+    backgroundColor: colors.secondaryBg,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    ...shadows.md,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 20,
-    marginBottom: 10,
+    ...typography.h2,
+    color: colors.neonBlue,
+    marginBottom: spacing.lg,
     textAlign: 'center',
   },
   stepsContainer: {
-    marginBottom: 20,
-    alignItems: 'center',
+    gap: spacing.lg,
   },
   step: {
-    fontSize: 16,
-    color: '#555',
-    marginBottom: 8,
-    textAlign: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
-  link: {
-    fontSize: 16,
-    color: '#007bff',
-    textDecorationLine: 'underline',
-    textAlign: 'center',
-    marginBottom: 20,
+  stepNumber: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.round,
+    backgroundColor: colors.neonPink,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.sm,
   },
-  button: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    marginTop: 20,
+  stepNumberText: {
+    ...typography.bodyBold,
+    color: colors.primaryText,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  stepText: {
+    flex: 1,
+    ...typography.body,
+    color: colors.secondaryText,
+  },
+  videoSection: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  videoTitle: {
+    ...typography.h3,
+    color: colors.neonPurple,
+    marginBottom: spacing.md,
+  },
+  watchButton: {
+    backgroundColor: colors.secondaryBg,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 2,
+    borderColor: colors.neonPurple,
+    ...shadows.sm,
+  },
+  watchButtonText: {
+    ...typography.button,
+    color: colors.primaryText,
+  },
+  migrateButton: {
+    backgroundColor: colors.neonBlue,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+    ...shadows.md,
+  },
+  migrateButtonText: {
+    ...typography.button,
+    color: colors.primaryText,
   },
 });
 

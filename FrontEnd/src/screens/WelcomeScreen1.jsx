@@ -1,77 +1,161 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  ScrollView,
+  useWindowDimensions,
+} from 'react-native';
+import { colors, typography, spacing, shadows, borderRadius } from '../theme';
+import { SafeAreaView } from 'react-native-web';
 
 const WelcomeScreen1 = ({ navigation }) => {
+  const { height } = useWindowDimensions();
+  const isSmallScreen = height < 700;
+
+  const dynamicStyles = {
+    gradientHeight: isSmallScreen ? 150 : '30%',
+    contentPadding: isSmallScreen ? 16 : spacing.xl,
+    titleSize: isSmallScreen ? 24 : typography.h1.fontSize,
+    subtitleSize: isSmallScreen ? 14 : typography.h3.fontSize,
+    noteSize: isSmallScreen ? 12 : typography.body.fontSize,
+    spacing: isSmallScreen ? 12 : spacing.lg,
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Protect Your TikTok Faves!</Text>
-      <Text style={styles.subtitle}>
-        A tool to migrate your Tiktok preferences to a new platform.
-      </Text>
-      <Text style={styles.note}>
-        Note from creator: I built this service with love and dedication 
-        to help us stay connected and thrive as a community in these uncertain times.
-        I’m Nicolas, a college student, and I built this during my free time to safeguard the 
-        small daily joy and personalized fun that Tiktok brings me, in case it ever gets banned.
-        I promise to keep this service free, and if you like it, 
-        please share it with your network and loved ones!
-      </Text>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate('WelcomeScreen2')}
+    <SafeAreaView style={styles.container}>
+      <View style={[styles.gradientOverlay, { height: dynamicStyles.gradientHeight }]} />
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={[
+          styles.scrollContent,
+          { 
+            padding: dynamicStyles.contentPadding,
+            gap: dynamicStyles.spacing 
+          }
+        ]}
       >
-        <Text style={styles.buttonText}>Tutorial</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate('HomeScreen')}
-      >
-        <Text style={styles.buttonText}>Migrate My Data</Text>
-      </TouchableOpacity>
-    </View>
+        <View style={[styles.headerContainer, { marginBottom: dynamicStyles.spacing }]}>
+          <Text style={[styles.title, { fontSize: dynamicStyles.titleSize }]}>
+            Protect Your TikTok Faves!
+          </Text>
+          <Text style={[styles.subtitle, { fontSize: dynamicStyles.subtitleSize }]}>
+            Migrate your TikTok preferences to a new platform seamlessly.
+          </Text>
+        </View>
+
+        <View style={[styles.card, { padding: dynamicStyles.spacing }]}>
+          <Text style={[styles.noteTitle, { fontSize: dynamicStyles.subtitleSize }]}>
+            A Note from the Creator
+          </Text>
+          <Text style={[styles.note, { fontSize: dynamicStyles.noteSize }]}>
+            Hey! I'm Nicolas, a college student who built this service with love and dedication. 
+            I wanted to help us stay connected and preserve the personalized joy that TikTok brings 
+            to our daily lives, just in case it ever gets banned.
+            {'\n\n'}
+            This service will always be free - if you find it helpful, please share it with your 
+            network and loved ones!
+          </Text>
+        </View>
+
+        <View style={[styles.buttonContainer, { gap: dynamicStyles.spacing / 2 }]}>
+          <TouchableOpacity
+            style={[styles.button, styles.tutorialButton]}
+            onPress={() => navigation.navigate('WelcomeScreen2')}
+          >
+            <Text style={[styles.buttonText, { fontSize: dynamicStyles.subtitleSize }]}>
+              Watch Tutorial
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.migrateButton]}
+            onPress={() => navigation.navigate('HomeScreen')}
+          >
+            <Text style={[styles.buttonText, { fontSize: dynamicStyles.subtitleSize }]}>
+              Migrate My Data
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: colors.primaryBg,
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    opacity: 0.1,
+    backgroundColor: colors.neonBlue,
+    ...(Platform.OS === 'web' && {
+      backgroundImage: `linear-gradient(135deg, ${colors.neonBlue}, ${colors.neonPink}, ${colors.neonPurple})`,
+    }),
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  headerContainer: {
     alignItems: 'center',
-    padding: 30,
-    backgroundColor: '#f9f9f9',
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    color: colors.primaryText,
     textAlign: 'center',
-    color: '#333',
+    fontFamily: typography.h1.fontFamily,
   },
   subtitle: {
-    fontSize: 20,
-    lineHeight: 28,
+    color: colors.secondaryText,
     textAlign: 'center',
-    marginBottom: 20,
-    color: '#555',
+    fontFamily: typography.h3.fontFamily,
+  },
+  card: {
+    backgroundColor: colors.secondaryBg,
+    borderRadius: borderRadius.lg,
+    ...shadows.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.neonPink,
+  },
+  noteTitle: {
+    color: colors.neonPink,
+    fontFamily: typography.h3.fontFamily,
+    marginBottom: 8,
   },
   note: {
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#777',
+    color: colors.secondaryText,
+    fontFamily: typography.body.fontFamily,
+    lineHeight: 20,
+  },
+  buttonContainer: {
+    width: '100%',
   },
   button: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    marginTop: 20,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    ...shadows.sm,
+  },
+  tutorialButton: {
+    backgroundColor: colors.secondaryBg,
+    borderWidth: 2,
+    borderColor: colors.neonBlue,
+  },
+  migrateButton: {
+    backgroundColor: colors.neonBlue,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: colors.primaryText,
+    fontFamily: typography.button.fontFamily,
   },
 });
 

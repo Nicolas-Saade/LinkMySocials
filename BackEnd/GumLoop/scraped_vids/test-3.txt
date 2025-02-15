@@ -1,0 +1,60 @@
+{
+  "basic": {
+    "title": "Embracing Uniqueness: Setting New Goals for Growth | TikTok",
+    "charset": "UTF-8",
+    "viewport": "width=device-width,initial-scale=1",
+    "google": "notranslate",
+    "format-detection": "telephone=no"
+  },
+  "seo": {
+    "description": "10.1K Likes, 172 Comments. TikTok video from Ida Bergfoth (@idabergfoth): \"Step out of the norm and embrace unique goals and ideas. Work hard towards what you want and appreciate the journey. What's your current goal? #fitness #bodybuilding #strong #fit #fittok #workoutmotivation\"",
+    "keywords": "growth mindset, setting goals, unique ideas, hard work, journey, fitness, bodybuilding, workout motivation, fittok",
+    "robots": "index, follow, max-image-preview:large",
+    "applicable-device": "pc, mobile"
+  },
+  "social": {
+    "og": {
+      "site_name": "TikTok",
+      "type": "website",
+      "title": "Ida Bergfoth on TikTok",
+      "description": "Being different is where true growth begins. Dare to have different goals.  Dare to have unique ideas.  Work hard for what it is you want and accept that it is worth the wait and the effort!  What is your current goal? 👇🏼 #fitness #bodybuilding #strong #fit #fittok #workoutmotivation",
+      "url": "https://www.tiktok.com/@idabergfoth/video/7412017301203045665"
+    },
+    "fb": {
+      "app_id": "597615686992125"
+    },
+    "twitter": {
+      "app": {
+        "id": {
+          "iphone": "835599320",
+          "googleplay": "com.zhiliaoapp.musically"
+        }
+      },
+      "card": "summary",
+      "site": "TikTok",
+      "title": "Ida Bergfoth on TikTok",
+      "description": "Being different is where true growth begins. Dare to have different goals.  Dare to have unique ideas.  Work hard for what it is you want and accept that it is worth the wait and the effort!  What is your current goal? 👇🏼 #fitness #bodybuilding #strong #fit #fittok #workoutmotivation"
+    }
+  },
+  "mobile": {
+    "al": {
+      "ios": {
+        "url": "snssdk1233://aweme/detail/7412017301203045665?undefined",
+        "app_store_id": "835599320",
+        "app_name": "musical.ly"
+      },
+      "android": {
+        "url": "snssdk1233://aweme/detail/7412017301203045665?undefined",
+        "package": "com.zhiliaoapp.musically",
+        "app_name": "musical.ly"
+      }
+    }
+  },
+  "missing_recommended": {
+    "og:image": "No OpenGraph image specified",
+    "og:type": "No specific content type",
+    "twitter:card": "Could use a more specific card type like summary_large_image",
+    "canonical": "No canonical URL specified",
+    "author": "No author meta tag"
+  }
+}

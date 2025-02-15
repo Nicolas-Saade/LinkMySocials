@@ -1,0 +1,35 @@
+{
+    "Activity": {
+      "Favorite Effects": {
+        "FavoriteEffectsList": null
+      },
+      "Favorite Hashtags": {
+        "FavoriteHashtagList": null
+      },
+      "Favorite Videos": {
+        "FavoriteVideoList": [
+            {
+                "Date": "2024-12-28 04:23:50",
+                "Link": "https://www.tiktokv.com/share/video/7452669799206833415/"
+              },
+              {
+                "Date": "2024-12-28 00:00:46",
+                "Link": "https://www.tiktokv.com/share/video/7238975495025528071/"
+              },
+              {
+                "Date": "2024-12-28 00:00:44",
+                "Link": "https://www.tiktokv.com/share/video/7367462736688631048/"
+              },
+              {
+                "Date": "2024-12-28 00:00:41",
+                "Link": "https://www.tiktokv.com/share/video/7395591807729437960/"
+              },
+              {
+                "Date": "2024-12-28 00:00:40",
+                "Link": "https://www.tiktokv.com/share/video/7242047087934803218/"
+              }
+        ]
+      }
+  }}
+  
+  

@@ -37,6 +37,7 @@ def main(MetaData, params):
 
         return f"@{match.group(1)}" if match else None
 
+
     def extact_tiktok_url(metadata):
         # Convert metadata to a string to search for the URL
         metadata_str = json.dumps(metadata)  # Convert the entire JSON object to a string
@@ -170,9 +171,3 @@ def main(MetaData, params):
 
     # Return the individual variables as a tuple
     return tiktok_url, creator_name, creator_handle, title, description, formatted_hashtags, likes_count, comments_count, formatted_keywords
-
-if __name__ == "__main__":
-    # Example usage
-    MetaData = "data-test"
-    params = {}
-    result = main(MetaData, params)

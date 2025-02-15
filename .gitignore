@@ -25,6 +25,7 @@ FrontEnd/node_modules/
 FrontEnd/dist
 FrontEnd/venv/
 /FrontEnd/android/.gradle
+FrontEnd/android/.gradle/8.10.2/fileHashes/fileHashes.lock
 
 # All Env Files
 *.env
@@ -48,5 +49,8 @@ node_modules/
 BackEnd/BackEnd/db.sqlite3
 FrontEnd/dist/
 BackEnd/Database/null_account_fixing.py
+
+BackEnd/api/Saade_!Fulll.json
+BackEnd/api/Saade_Full.json
 
 AWSCLIV2.pkg

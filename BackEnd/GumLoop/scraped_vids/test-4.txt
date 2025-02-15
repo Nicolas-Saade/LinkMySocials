@@ -1,0 +1,65 @@
+{
+  "basic": {
+    "title": "Pikasso Taste Test from B to B Restaurant in Lebanon | TikTok",
+    "charset": "UTF-8",
+    "viewport": "width=device-width,initial-scale=1"
+  },
+  "seo": {
+    "robots": "index, follow, max-image-preview:large",
+    "google": "notranslate",
+    "keywords": "Pikasso taste test, B to B restaurant, Lebanese food, Pikasso dish, iconic Lebanese dish, food review, Lebanese cuisine, Lebanese TikTok, food vlog, Lebanese restaurant review",
+    "description": "2240 Likes, 163 Comments. TikTok video from SEBtheLEB (@sebtheleb): \"Join me as I try the iconic Pikasso dish from B to B restaurant in Lebanon. Watch to see if this classic dish still lives up to its reputation! #tastetest #mukbang #food #restaurantreview #lebanesetiktok #lebanon #foodporn\"",
+    "applicable-device": "pc, mobile",
+    "format-detection": "telephone=no"
+  },
+  "social": {
+    "og": {
+      "site_name": "TikTok",
+      "type": "website", 
+      "title": "SEBtheLEB on TikTok",
+      "description": "Reply to @mg619916 #tastetest #mukbang #food #fyp #fypシ #viral #restaurantreview #lebanesetiktok #lebanon #trending #foodporn",
+      "url": "https://www.tiktok.com/@/video/6985958388974767366/",
+      "image": {
+        "content": "",
+        "width": "undefined",
+        "height": "undefined"
+      }
+    },
+    "fb": {
+      "app_id": "597615686992125"
+    },
+    "twitter": {
+      "card": "summary",
+      "site": "TikTok",
+      "title": "SEBtheLEB on TikTok",
+      "description": "Reply to @mg619916 #tastetest #mukbang #food #fyp #fypシ #viral #restaurantreview #lebanesetiktok #lebanon #trending #foodporn",
+      "image": "",
+      "app": {
+        "id": {
+          "iphone": "835599320",
+          "googleplay": "com.zhiliaoapp.musically"
+        }
+      }
+    }
+  },
+  "app": {
+    "mobile": {
+      "ios": {
+        "url": "snssdk1233://aweme/detail/6985958388974767366?undefined",
+        "app_store_id": "835599320",
+        "app_name": "musical.ly"
+      },
+      "android": {
+        "url": "snssdk1233://aweme/detail/6985958388974767366?undefined",
+        "package": "com.zhiliaoapp.musically",
+        "app_name": "musical.ly"
+      }
+    }
+  },
+  "missing_recommended": [
+    "meta description is not optimized for search",
+    "og:image is empty",
+    "twitter:image is empty",
+    "canonical URL should be more specific"
+  ]
+}
