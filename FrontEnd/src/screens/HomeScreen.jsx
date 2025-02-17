@@ -27,6 +27,7 @@ import { colors, typography, borderRadius, shadows } from '../theme';
 import LoginModal from '../components/LogInModal';
 import RegisterModal from '../components/RegisterModal';
 import { handleFileSelect } from '../components/FileSelector';
+import AddCreatorModal from '../components/AddCreatorModal';
 
 const screenWidth = Dimensions.get('window').width;
 const boxWidth = 150; // Set your desired profile box width
@@ -63,15 +64,6 @@ const App = ({/*route,*/ navigation }) => {
 
   // State for Creator Form
   const [creatorModal, setCreatorModal] = useState(false);
-  const [creatorForm, setCreatorForm] = useState({
-    profilePicture: '',
-    tiktokUsername: '',
-    instagramURL: '',
-    xURL: '',
-    facebookURL: '',
-  });
-  const [token, setToken] = useState(''); // State for the random token in Creator Form
-
 
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   // const [loading, setLoading] = useState(true);
@@ -662,51 +654,7 @@ const App = ({/*route,*/ navigation }) => {
     Alert.alert('Bulk Follow', `Following all users on ${platform}!`);
     // API call or bulk follow implementation here
   };
-
-
-  // Creator Form Submission
-  const submitCreatorData = async () => {
-    try {
-      const payload = { ...creatorForm, token }; // Form data + token
-      const response = await api.post('/api/creator-data/', payload, {
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (response.status === 201) {
-        Alert.alert('Success', 'Social Media Data Submitted!');
-        setCreatorModal(false); // Close the modal
-        setCreatorForm({ // Reset form state
-          profilePicture: '',
-          tiktokUsername: '',
-          instagramURL: '',
-          xURL: '',
-          facebookURL: '',
-        });
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to submit social media data.")
-    }
-  }
-
-  // Helper Function to generate a random string
-  const generateToken = () => {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+';
-    let result = '';
-    for (let i = 0; i < 8; i++) { // random 8-char str
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return result;
-  };
-
-  // Generate token when Creator modal is opened
-  useEffect(() => {
-    if (creatorModal) {
-      setToken(generateToken());
-    }
-  }, [creatorModal]);
-
-
-
+  
   const BulkFollowDropdown = ({ onSelectPlatform }) => (
     <ModalDropdown
       options={['Twitter', 'Facebook', 'Instagram']}
@@ -887,79 +835,12 @@ const App = ({/*route,*/ navigation }) => {
         }}
       />
 
-      {/* Creator Modal */}
-      <Modal
-        transparent={true}
-        animationType="slide"
+      {/* Replace the old Creator Modal with the new component */}
+      <AddCreatorModal
         visible={creatorModal}
-        onRequestClose={() => setCreatorModal(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Social Media Details</Text>
-            <Text style={styles.message}>
-                Please send the code "<Text style={styles.token}>{token}</Text>" to this TikTok Account:{' '}
-              <Text
-                style={styles.link}
-                onPress={() => Linking.openURL('https://www.tiktok.com/@example')}>
-                https://www.tiktok.com/@example
-              </Text>
-            </Text>
-            {/* Profile Picture Picker */}
-            <TouchableOpacity onPress={ handlePPupload } style={styles.uploadButton}>
-              <Text style={styles.uploadButtonText}>
-                {profileImagePreview ? 'Change Profile Picture' : 'Upload Profile Picture'}
-              </Text>
-            </TouchableOpacity>
-
-            {profileImagePreview && (
-              <Image source={{ uri: profileImagePreview }} style={styles.profileImagePreview} />
-            )}
-
-            <TextInput
-              style={styles.input}
-              placeholder="TikTok Username"
-              value={creatorForm.tiktokUsername}
-              onChangeText={(text) => setCreatorForm((prev) => ({ ...prev, tiktokUsername: text }))}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Instagram URL"
-              value={creatorForm.instagramURL}
-              onChangeText={(text) => setCreatorForm((prev) => ({ ...prev, instagramURL: text }))}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="X (Twitter) URL"
-              value={creatorForm.xURL}
-              onChangeText={(text) => setCreatorForm((prev) => ({ ...prev, xURL: text }))}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Facebook URL"
-              value={creatorForm.facebookURL}
-              onChangeText={(text) => setCreatorForm((prev) => ({ ...prev, facebookURL: text }))}
-            />
-
-            {/* Buttons Row */}
-            <View style={styles.buttonsRow}>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setCreatorModal(false)}
-              >
-                <Text style={styles.closeButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.registerButton}
-                onPress={() => submitCreatorData()}
-              >
-                <Text style={styles.registerButtonText}>Submit</Text>
-              </TouchableOpacity>
-            </View>
-
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setCreatorModal(false)}
+        email={email}
+      />
 
       <FilterModal
         visible={isFilterModalVisible}
