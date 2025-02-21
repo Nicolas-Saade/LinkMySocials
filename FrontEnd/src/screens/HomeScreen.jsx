@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native';
 import { Modal, TextInput } from 'react-native';
 import ModalDropdown from 'react-native-modal-dropdown';
 import ProfileBox from '../components/ProfileBox';
-import CustomProfileBox from '../components/UserProfileBox';
+import CustomProfileBox from '../components/UserProfileBox'; // TODO: Change to AddCreatorModal
 import { api } from '../utils';
 import { useDropzone } from 'react-dropzone';
 import { createRoot } from 'react-dom/client';
