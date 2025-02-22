@@ -199,7 +199,6 @@ const App = ({/*route,*/ navigation }) => {
   };
 
   const processFollowingFromJson = async (jsonFile) => {
-    console.log("Processing JSON file");
     try {
       if (!jsonFile || Object.keys(jsonFile).length === 0) {
         Alert.alert('Notice', 'The JSON file is empty or invalid.');
@@ -228,13 +227,8 @@ const App = ({/*route,*/ navigation }) => {
         return;
       }
 
-      console.log("YABADABDADOU");
-      let i = 0;
-
       // Process profiles in chunks of 30
       const processProfileChunk = async (chunk) => {
-        console.log("Iteration", i);
-        i++;
         try {
           const response = await api.post(
             '/api/profile-mapping/',
@@ -827,7 +821,6 @@ const App = ({/*route,*/ navigation }) => {
           }
           setShowRegisterModal(false);
           setShowSuccessAlert(true);
-          console.log("Success Alert Shown");
         }}
       />
 
@@ -838,11 +831,8 @@ const App = ({/*route,*/ navigation }) => {
         message="Your account has been created successfully!"
         // onClose={() => setShowSuccessAlert(false)}
         onClose = {() => {
-          console.log("Starting to close Success Alert");
           setShowSuccessAlert(false);
-          console.log("Closing Success Alert");
           setShowRegisterModal(false);
-          console.log("Closing Success Alert and Register Modal");
         }}
       />
 
