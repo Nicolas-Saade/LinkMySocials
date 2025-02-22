@@ -232,24 +232,22 @@ def creator_data(request):
     """
     # Extract data from the request
 
-    profile_picture = request.data.get("profilePicture")
-    tiktok_username = request.data.get("tiktokUsername")
-    instagram_username = request.data.get("instagramURL")
-    x_username = request.data.get("xURL")
-    faceboook_username = request.data.get("facebookURL")
-    token = request.data.get("token")
+    profile_picture = request.data.get("profile_picture_url")
+    tiktok_username = request.data.get("tiktok_username")
+    instagram_username = request.data.get("instagram_username")
+    x_username = request.data.get("x_username")
+    facebook_username = request.data.get("facebook_username")
 
     if not tiktok_username:
         return Response({"error": "Missing TikTok Username!"}, status=400)
 
     try:
-        supabase.table("temporary_creators").insert({
-             "profile_picture": profile_picture,
+        supabase.table("socials_mapping").insert({
+             "profile_picture_url": profile_picture,
              "tiktok_username": tiktok_username,
              "instagram_username": instagram_username,
              "x_username": x_username,
-             "facebook_username": faceboook_username,
-             "token": token,
+             "facebook_username": facebook_username,
          }).execute()
 
         return Response({"message": "Social media data stored!"}, status=201)

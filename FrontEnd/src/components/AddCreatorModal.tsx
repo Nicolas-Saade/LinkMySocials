@@ -101,10 +101,9 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
         instagram_username: creatorForm.instagramURL,
         x_username: creatorForm.xURL,
         facebook_username: creatorForm.facebookURL,
-        email: email
       };
 
-      const response = await api.post('/api/add-creator/', payload, {
+      const response = await api.post('/api/creator-data/', payload, {
         headers: { 'Content-Type': 'application/json' },
       });
 
