@@ -32,7 +32,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
-  const [showAlert, setShowAlert] = useState(false);
 
   const handleRegister = async () => {
     try {
@@ -52,18 +51,21 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
       });
 
       if (response.status === 201) {
-        setError('');
-        setShowAlert(true);
+        // Update parent component
         onRegisterSuccess({ 
           first_name: firstName, 
           last_name: lastName,
           json_file: response.data.json_file
         });
-        // Clear form
+        
+        // Clear form and error
+        setError('');
         setFirstName('');
         setLastName('');
         setEmail('');
         setPassword('');
+        
+        // Close modal
         onClose();
       }
     } catch (err: any) {
@@ -76,98 +78,89 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   };
 
   return (
-    <>
-      <Modal
-        visible={visible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={onClose}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create Your Account</Text>
-            
-            <Text style={styles.message}>
-              Join us to keep track of all your social media presence in one place.
-            </Text>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Create Your Account</Text>
+          
+          <Text style={styles.message}>
+            Join us to keep track of all your social media presence in one place.
+          </Text>
 
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-            <TextInput
-              style={styles.input}
-              placeholder="First Name"
-              placeholderTextColor={colors.secondaryText}
-              value={firstName}
-              onChangeText={(text) => {
-                setFirstName(text);
-                setError('');
-              }}
-              autoCapitalize="words"
-            />
+          <TextInput
+            style={styles.input}
+            placeholder="First Name"
+            placeholderTextColor={colors.secondaryText}
+            value={firstName}
+            onChangeText={(text) => {
+              setFirstName(text);
+              setError('');
+            }}
+            autoCapitalize="words"
+          />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Last Name"
-              placeholderTextColor={colors.secondaryText}
-              value={lastName}
-              onChangeText={(text) => {
-                setLastName(text);
-                setError('');
-              }}
-              autoCapitalize="words"
-            />
+          <TextInput
+            style={styles.input}
+            placeholder="Last Name"
+            placeholderTextColor={colors.secondaryText}
+            value={lastName}
+            onChangeText={(text) => {
+              setLastName(text);
+              setError('');
+            }}
+            autoCapitalize="words"
+          />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Email Address"
-              placeholderTextColor={colors.secondaryText}
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setError('');
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
+          <TextInput
+            style={styles.input}
+            placeholder="Email Address"
+            placeholderTextColor={colors.secondaryText}
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              setError('');
+            }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor={colors.secondaryText}
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                setError('');
-              }}
-              secureTextEntry
-            />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor={colors.secondaryText}
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              setError('');
+            }}
+            secureTextEntry
+          />
 
-            <View style={styles.buttonsRow}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={onClose}
-              >
-                <Text style={styles.buttonText}>Cancel</Text>
-              </TouchableOpacity>
+          <View style={styles.buttonsRow}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={onClose}
+            >
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.registerButton}
-                onPress={handleRegister}
-              >
-                <Text style={styles.buttonText}>Register</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={styles.registerButton}
+              onPress={handleRegister}
+            >
+              <Text style={styles.buttonText}>Register</Text>
+            </TouchableOpacity>
           </View>
         </View>
-      </Modal>
-
-      <CustomAlert
-        visible={showAlert}
-        title="Welcome!"
-        message="Your account has been created successfully. Check your email for a welcome message!"
-        onClose={() => setShowAlert(false)}
-      />
-    </>
+      </View>
+    </Modal>
   );
 };
 

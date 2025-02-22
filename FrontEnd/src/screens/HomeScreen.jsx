@@ -28,6 +28,7 @@ import LoginModal from '../components/LogInModal';
 import RegisterModal from '../components/RegisterModal';
 import { handleFileSelect } from '../components/FileSelector';
 import AddCreatorModal from '../components/AddCreatorModal';
+import CustomAlert from '../components/CustomAlert';
 
 const screenWidth = Dimensions.get('window').width;
 const boxWidth = 150; // Set your desired profile box width
@@ -65,6 +66,7 @@ const App = ({/*route,*/ navigation }) => {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSortAlert, setShowSortAlert] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   const scrollAnim = new Animated.Value(0); // Tracks scroll (Y-axis) position
   const offsetAnim = new Animated.Value(0); // TODO Use later for snapping footer back in place
@@ -813,11 +815,21 @@ const App = ({/*route,*/ navigation }) => {
           setLastName('');
           setEmail('');
           setPassword('');
-          // Check for JSON file and process it
+          // Process JSON file if exists
           if (userData.json_file && Object.keys(userData.json_file).length > 0) {
             processFollowingFromJson(userData.json_file);
           }
+          setShowRegisterModal(false);
+          setShowSuccessAlert(true);
         }}
+      />
+
+      {/* Success Alert */}
+      <CustomAlert
+        visible={showSuccessAlert}
+        title="Welcome!"
+        message="Your account has been created successfully!"
+        onClose={() => setShowSuccessAlert(false)}
       />
 
       {/* Creator Modal */}
