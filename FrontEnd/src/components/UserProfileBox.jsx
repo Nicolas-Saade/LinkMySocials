@@ -12,17 +12,35 @@ import redditIconPlaceholder from '../assets/reddit-logo-not.png'; // Placeholde
 import placeHolder from '../assets/Neutral-placeholder-profile.jpg';
 import plusPhoto from '../assets/Custom-placeholder-profile.png'
 
-const CustomProfileBox = ({ name, profilePicture }) => {
-  const handleSocialAction = (platform) => {
-    Alert.alert(
-      `${platform}`,
-      `Choose an action for ${platform}:`,
-      [
-        { text: 'Redirect', onPress: () => console.log(`Redirecting to ${platform}...`) },
-        { text: 'Add Credential', onPress: () => console.log(`Adding credential for ${platform}...`) },
-      ],
-      { cancelable: true }
-    );
+const CustomProfileBox = ({ 
+  name, 
+  profilePicture, 
+  instagramUrl, 
+  facebookUrl, 
+  twitterUrl, 
+  redditUrl, 
+  onAddCredential 
+}) => {
+  const handleSocialAction = (platform, url) => {
+    if (url) {
+      openUrl(url);
+    } else {
+      Alert.alert(
+        `${platform}`,                    
+        `Add your ${platform} profile:`,
+        [
+          { 
+            text: 'Add Credential', 
+            onPress: () => onAddCredential(platform)
+          },
+          { 
+            text: 'Cancel', 
+            style: 'cancel'
+          },
+        ],
+        { cancelable: true }  
+      );
+    }
   };
 
   return (
@@ -41,39 +59,35 @@ const CustomProfileBox = ({ name, profilePicture }) => {
         </View>
         
         <View style={styles.iconsSection}>
-          <TouchableOpacity onPress={() => handleSocialAction('Facebook')}>
+          <TouchableOpacity 
+            onPress={() => handleSocialAction('Facebook', facebookUrl)}
+          >
             <Image 
-              source={facebookIconPlaceholder} 
-              style={styles.icon} 
+              source={facebookUrl ? facebookIcon : facebookIconPlaceholder} 
+              style={[styles.icon, !facebookUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleSocialAction('Instagram')}>
+          <TouchableOpacity onPress={() => handleSocialAction('Instagram', instagramUrl)}>
             <Image 
-              source={instagramIconPlaceholder} 
-              style={styles.icon} 
+              source={instagramUrl ? instagramIcon : instagramIconPlaceholder} 
+              style={[styles.icon, !instagramUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleSocialAction('Twitter')}>
+          <TouchableOpacity onPress={() => handleSocialAction('Twitter', twitterUrl)}>
             <Image 
-              source={twitterIconPlaceholder} 
-              style={styles.icon} 
+              source={twitterUrl ? twitterIcon : twitterIconPlaceholder} 
+              style={[styles.icon, !twitterUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleSocialAction('Reddit')}>
+          <TouchableOpacity onPress={() => handleSocialAction('Reddit', redditUrl)}>
             <Image 
-              source={redditIconPlaceholder} 
-              style={styles.icon} 
+              source={redditUrl ? redditIcon : redditIconPlaceholder} 
+              style={[styles.icon, !redditUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
         </View>
       </View>
-      <Text 
-        style={styles.name}
-        numberOfLines={1}
-        ellipsizeMode="tail"
-      >
-        {name}
-      </Text>
+      <Text style={styles.name}>{name}</Text>
     </View>
   );
 };
@@ -142,6 +156,9 @@ const styles = StyleSheet.create({
     height: 20,
     marginBottom: 3,
     backgroundColor: 'transparent',
+  },
+  placeholderIcon: {
+    opacity: 0.5,
   },
   name: {
     color: colors.primaryText,

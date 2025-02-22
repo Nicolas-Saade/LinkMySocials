@@ -90,6 +90,14 @@ const App = ({/*route,*/ navigation }) => {
 
   const [contentHeight, setContentHeight] = useState(0);
 
+  const [userSocialProfiles, setUserSocialProfiles] = useState({
+    facebook_url: null,
+    instagram_url: null,
+    twitter_url: null,
+    reddit_url: null,
+    profile_picture: null
+  });
+
   useEffect(() => {
     const rows = Math.ceil(profiles.length / columns);
     const boxHeight = 160; // Height of each profile box
@@ -731,6 +739,15 @@ const App = ({/*route,*/ navigation }) => {
                 <View style={styles.profileWrapper}>
                   <CustomProfileBox
                     name={(accountName.trim()) ? `${accountName}` : 'Your Account'}
+                    profilePicture={userSocialProfiles?.profile_picture}
+                    instagramUrl={userSocialProfiles?.instagram_url}
+                    facebookUrl={userSocialProfiles?.facebook_url}
+                    twitterUrl={userSocialProfiles?.twitter_url}
+                    redditUrl={userSocialProfiles?.reddit_url}
+                    onAddCredential={(platform) => {
+                      setCreatorModal(true);
+                      setSelectedPlatform(platform);
+                    }}
                   />
                 </View>
               </TouchableOpacity>
@@ -791,6 +808,32 @@ const App = ({/*route,*/ navigation }) => {
           setIsLoggedIn(true);
           setEmail(userData.email);
           setAccountName(`${userData.first_name} ${userData.last_name}`);
+          
+          // Add this function to fetch user's social profiles
+          const fetchUserProfiles = async () => {
+            try {
+              const response = await api.post('/api/profile-mapping/', {
+                prof: [userData.email]
+              });
+              
+              if (response.status === 200 && response.data.profiles && response.data.profiles.length > 0) {
+                const profile = response.data.profiles[0];
+                // Pass these URLs to the UserProfileBox
+                setUserSocialProfiles({
+                  facebook_url: profile.facebook_url,
+                  instagram_url: profile.instagram_url,
+                  twitter_url: profile.twitter_url,
+                  reddit_url: profile.reddit_url,
+                  profile_picture: profile.profile_picture
+                });
+              }
+            } catch (error) {
+              console.error('Error fetching user profiles:', error);
+            }
+          };
+
+          fetchUserProfiles();
+          
           if (userData.json_file && Object.keys(userData.json_file).length > 0) {
             processFollowingFromJson(userData.json_file);
           }
