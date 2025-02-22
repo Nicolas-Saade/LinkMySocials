@@ -289,6 +289,7 @@ const App = ({/*route,*/ navigation }) => {
             else {
               file_type = 'png';
             }
+            console.log("Uploading to S3 Bucket", file_type);
             try {
               // Call the backend to generate pre-signed URLs
               response = await fetch(`/aws/generate_presigned_url/${email}/${file_type}/`, {
@@ -553,87 +554,89 @@ const App = ({/*route,*/ navigation }) => {
         }
     }
 
-    response = await api.post('/api/personalized-algorithm-data/', formData, {
-      headers: {
-          'Content-Type': 'multipart/form-data',
-      },
-  });
+    // Commenting out Ranking ALgorithm for performance reasons
 
-  let liked_vids = [];
-  let bookmarked_vids = [];
+  //   response = await api.post('/api/personalized-algorithm-data/', formData, {
+  //     headers: {
+  //         'Content-Type': 'multipart/form-data',
+  //     },
+  // });
 
-  if (response?.status === 200) {
-      Alert.alert('Success', response.data?.message || `File "${file.name}" uploaded successfully!`);
+  // let liked_vids = [];
+  // let bookmarked_vids = [];
 
-      liked_vids = response.data.dict.Likes;
-      bookmarked_vids = response.data.dict.Bookmarks;
-  }
-  else {
-    Alert.alert('Error', response?.data?.error || 'An error occurred while uploading the file.');
-  }
+  // if (response?.status === 200) {
+  //     Alert.alert('Success', response.data?.message || `File "${file.name}" uploaded successfully!`);
 
-  const batchSize = 30;
-  const batches = [];
-  let results = {};
+  //     liked_vids = response.data.dict.Likes;
+  //     bookmarked_vids = response.data.dict.Bookmarks;
+  // }
+  // else {
+  //   Alert.alert('Error', response?.data?.error || 'An error occurred while uploading the file.');
+  // }
 
-  // Split likes and bookmarks into batches of 100
-  for (let i = 0; i < liked_vids.length; i += batchSize) {
-    batches.push({ Likes: liked_vids.slice(i, i + batchSize), Bookmarks: [] });
-  }
-  for (let i = 0; i < bookmarked_vids.length; i += batchSize) {
-    batches.push({ Likes: [], Bookmarks: bookmarked_vids.slice(i, i + batchSize) });
-  }
+  // const batchSize = 30;
+  // const batches = [];
+  // let results = {};
 
-  let updatedResults = {};
+  // // Split likes and bookmarks into batches of 100
+  // for (let i = 0; i < liked_vids.length; i += batchSize) {
+  //   batches.push({ Likes: liked_vids.slice(i, i + batchSize), Bookmarks: [] });
+  // }
+  // for (let i = 0; i < bookmarked_vids.length; i += batchSize) {
+  //   batches.push({ Likes: [], Bookmarks: bookmarked_vids.slice(i, i + batchSize) });
+  // }
 
-  for (let i = 0; i < batches.length; i++) {
-      const batch = batches[i];
+  // let updatedResults = {};
 
-      try {
-        const response = await api.post('/api/personalized-creator-recommendation/', JSON.stringify(batch), {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+  // for (let i = 0; i < batches.length; i++) {
+  //     const batch = batches[i];
 
-        console.log(`Batch ${i + 1} result:`, response);
+  //     try {
+  //       const response = await api.post('/api/personalized-creator-recommendation/', JSON.stringify(batch), {
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //         },
+  //       });
 
-        let scores = response.data.ranked_creators;
+  //       console.log(`Batch ${i + 1} result:`, response);
 
-        console.log("SCORES", scores);
+  //       let scores = response.data.ranked_creators;
 
-        let key = undefined
-        let value = undefined
+  //       console.log("SCORES", scores);
 
-        for (const creator of Object.values(scores)) {
-          key = creator.creator_handle
-          if (key === undefined) {
-            continue;
-          }
-          key = key.replace('@', '');
-          value = creator.score;
+  //       let key = undefined
+  //       let value = undefined
+
+  //       for (const creator of Object.values(scores)) {
+  //         key = creator.creator_handle
+  //         if (key === undefined) {
+  //           continue;
+  //         }
+  //         key = key.replace('@', '');
+  //         value = creator.score;
           
-          if (!results[key]) {
-            results[key] = 0; // Start with 0 if the key isn't present
-          }
-          results[key] += value;
-        }
+  //         if (!results[key]) {
+  //           results[key] = 0; // Start with 0 if the key isn't present
+  //         }
+  //         results[key] += value;
+  //       }
 
-        console.log('Ranked Creators:', results);
-        updatedResults = { ...algoResults };
-        for (const [key, value] of Object.entries(results)) {
-          if (updatedResults[key]) {
-            updatedResults[key] += value; // Add to existing value
-          } else {
-            updatedResults[key] = value; // Initialize new key
-          }
-        }
+  //       console.log('Ranked Creators:', results);
+  //       updatedResults = { ...algoResults };
+  //       for (const [key, value] of Object.entries(results)) {
+  //         if (updatedResults[key]) {
+  //           updatedResults[key] += value; // Add to existing value
+  //         } else {
+  //           updatedResults[key] = value; // Initialize new key
+  //         }
+  //       }
 
-      } catch (error) {
-        console.error(`Error sending batch ${i + 1}:`, error);
-      }
-  }
-  setAlgoResults(updatedResults);
+  //     } catch (error) {
+  //       console.error(`Error sending batch ${i + 1}:`, error);
+  //     }
+  // }
+  // setAlgoResults(updatedResults);
 
 };
 
