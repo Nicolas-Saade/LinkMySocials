@@ -284,7 +284,7 @@ def creator_data(request):
     API to store creator data - creates new entry or updates existing one based on creator_data_added flag.
     """
     try:
-        # Extract data from the request
+        # Extract data from request
         email = request.data.get("email")
         profile_picture = request.data.get("profile_picture_url")
         tiktok_username = request.data.get("tiktok_username")
@@ -295,13 +295,8 @@ def creator_data(request):
         if not email or not tiktok_username:
             return Response({"error": "Missing required fields (email or TikTok username)!"}, status=400)
 
-        # First check user's creator_data_added status
-        user_response = (
-            supabase.table("user_profile")
-            .select("*")
-            .eq("email", email)
-            .execute()
-        )
+        # Get user profile
+        user_response = supabase.table("user_profile").select("*").eq("email", email).execute()
 
         if not user_response.data:
             return Response({"error": "User not found!"}, status=404)
@@ -311,20 +306,34 @@ def creator_data(request):
         reference_creator = user.get("reference_creator")
 
         if not creator_data_added:
-            # Create new entry in socials_mapping
-            socials_response = supabase.table("socials_mapping").insert({
-                "profile_picture_url": profile_picture,
-                "tiktok_username": tiktok_username,
-                "instagram_username": instagram_username,
-                "x_username": x_username,
-                "facebook_username": facebook_username,
-            }).execute()
+            # Create new entry
+            # Check if entry with tiktok_username exists
+            existing_entry = supabase.table("socials_mapping").select("*").eq("tiktok_username", tiktok_username).execute()
+            
+            if existing_entry.data:
+                # Update existing entry
+                socials_response = supabase.table("socials_mapping").update({
+                    "profile_picture_url": profile_picture,
+                    "instagram_username": instagram_username,
+                    "x_username": x_username,
+                    "facebook_username": facebook_username,
+                }).eq("tiktok_username", tiktok_username).execute()
+                creator_uid = existing_entry.data[0].get("tiktok_uid")  #
+            else:
+                # Create new entry
+                socials_response = supabase.table("socials_mapping").insert({
+                    "profile_picture_url": profile_picture,
+                    "tiktok_username": tiktok_username,
+                    "instagram_username": instagram_username,
+                    "x_username": x_username,
+                    "facebook_username": facebook_username,
+                }).execute()
+                creator_uid = socials_response.data[0].get("tiktok_uid")  # Get uid from new entry
 
             if not socials_response.data:
                 return Response({"error": "Failed to create social media mapping"}, status=500)
-
-            # Update user profile with reference and flag
-            creator_uid = socials_response.data[0].get("tiktok_uid")
+            
+            # Update user profile
             supabase.table("user_profile").update({
                 "creator_data_added": True,
                 "reference_creator": creator_uid
@@ -335,9 +344,8 @@ def creator_data(request):
                 "creator_uid": creator_uid
             }, status=201)
         else:
-            # Update only provided fields in existing entry
+            # Update existing entry
             update_data = {}
-            
             if profile_picture:
                 update_data["profile_picture_url"] = profile_picture
             if instagram_username:
