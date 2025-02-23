@@ -242,13 +242,21 @@ def creator_data(request):
         return Response({"error": "Missing TikTok Username!"}, status=400)
 
     try:
-        supabase.table("socials_mapping").insert({
-             "profile_picture_url": profile_picture,
-             "tiktok_username": tiktok_username,
-             "instagram_username": instagram_username,
-             "x_username": x_username,
-             "facebook_username": facebook_username,
-         }).execute()
+        if supabase.table("socials_mapping").select("*").eq("tiktok_username", tiktok_username).execute().data:
+            supabase.table("socials_mapping").update({
+                "profile_picture_url": profile_picture,
+                "instagram_username": instagram_username,
+                "x_username": x_username,
+                "facebook_username": facebook_username,
+            }).eq("tiktok_username", tiktok_username).execute()
+        else:
+            supabase.table("socials_mapping").insert({
+                "profile_picture_url": profile_picture,
+                "tiktok_username": tiktok_username,
+                "instagram_username": instagram_username,
+                "x_username": x_username,
+                "facebook_username": facebook_username,
+            }).execute()
 
         return Response({"message": "Social media data stored!"}, status=201)
     except Exception as e:
