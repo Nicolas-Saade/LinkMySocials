@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
 import { colors, typography, borderRadius, shadows } from '../theme';
 import facebookIcon from '../assets/Facebook-logo-reg.png'; // Regular Facebook icon
 import facebookIconPlaceholder from '../assets/facebook-logo-not.png'; // Placeholder for missing URL
@@ -21,26 +21,13 @@ const CustomProfileBox = ({
   redditUrl, 
   onAddCredential 
 }) => {
-  const handleSocialAction = (platform, url) => {
-    if (url) {
-      openUrl(url);
-    } else {
-      Alert.alert(
-        `${platform}`,                    
-        `Add your ${platform} profile:`,
-        [
-          { 
-            text: 'Add Credential', 
-            onPress: () => onAddCredential(platform)
-          },
-          { 
-            text: 'Cancel', 
-            style: 'cancel'
-          },
-        ],
-        { cancelable: true }  
-      );
-    }
+  const handleSocialAction = (url) => {
+      // Open the URL
+      Linking.openURL(url).catch((err) => {
+        console.error('Error opening URL:', err);
+        Alert.alert('Error', 'Could not open the URL');
+      });
+    
   };
 
   return (
@@ -49,7 +36,7 @@ const CustomProfileBox = ({
         <View style={styles.imageSection}>
           <View style={styles.imageContainer}>
             <Image 
-              source={{ uri: profilePicture || placeHolder }}
+              source={profilePicture ? { uri: profilePicture } : plusPhoto}
               style={styles.image} 
             />
             <View style={styles.plusOverlay}>
@@ -59,27 +46,28 @@ const CustomProfileBox = ({
         </View>
         
         <View style={styles.iconsSection}>
-          <TouchableOpacity 
-            onPress={() => handleSocialAction('Facebook', facebookUrl)}
-          >
+          <TouchableOpacity onPress={() => handleSocialAction(facebookUrl)}>
             <Image 
               source={facebookUrl ? facebookIcon : facebookIconPlaceholder} 
               style={[styles.icon, !facebookUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleSocialAction('Instagram', instagramUrl)}>
+          
+          <TouchableOpacity onPress={() => handleSocialAction(instagramUrl)}>
             <Image 
               source={instagramUrl ? instagramIcon : instagramIconPlaceholder} 
               style={[styles.icon, !instagramUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleSocialAction('Twitter', twitterUrl)}>
+          
+          <TouchableOpacity onPress={() => handleSocialAction(twitterUrl)}>
             <Image 
               source={twitterUrl ? twitterIcon : twitterIconPlaceholder} 
               style={[styles.icon, !twitterUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleSocialAction('Reddit', redditUrl)}>
+          
+          <TouchableOpacity onPress={() => handleSocialAction(redditUrl)}>
             <Image 
               source={redditUrl ? redditIcon : redditIconPlaceholder} 
               style={[styles.icon, !redditUrl && styles.placeholderIcon]} 
