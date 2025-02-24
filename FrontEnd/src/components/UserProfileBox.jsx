@@ -18,6 +18,7 @@ const CustomProfileBox = ({
   initialData = null,
   email
 }) => {
+  const [socials_username, setSocialsUsername] = useState(null);
   const [userData, setUserData] = useState(initialData || {
     facebook_username: '',
     instagram_username: '',
@@ -54,6 +55,7 @@ const CustomProfileBox = ({
       if (response.data && response.data.data && response.data.data.length > 0) {
         setUserData(response.data.data[0]);
         console.log('Fetched user data:', response.data.data[0]);
+        setSocialsUsername(response.data.data[0].tiktok_username);
       } else {
         setUserData({
           facebook_username: '',
@@ -172,7 +174,7 @@ const CustomProfileBox = ({
         numberOfLines={1}
         ellipsizeMode="tail"
       >
-        {name}
+        {socials_username ? socials_username : name}
       </Text>
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
