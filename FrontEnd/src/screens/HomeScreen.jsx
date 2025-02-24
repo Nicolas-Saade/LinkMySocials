@@ -28,6 +28,7 @@ import LoginModal from '../components/LogInModal';
 import RegisterModal from '../components/RegisterModal';
 import { handleFileSelect } from '../components/FileSelector';
 import AddCreatorModal from '../components/AddCreatorModal';
+import CustomAlert from '../components/CustomAlert';
 
 const screenWidth = Dimensions.get('window').width;
 const boxWidth = 150; // Set your desired profile box width
@@ -49,8 +50,6 @@ const App = ({/*route,*/ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSavePopup, setShowSavePopup] = useState(false);
   const [isNotificationVisible, setIsNotificationVisible] = useState(false);
-  const [profileImagePreview, setProfileImagePreview] = useState(null);
-
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [showOverwriteAlertModal, setShowOverwriteAlertModal] = useState(false);
   const [alertModalConfig, setAlertModalConfig] = useState({
@@ -64,13 +63,12 @@ const App = ({/*route,*/ navigation }) => {
 
   // State for Creator Form
   const [creatorModal, setCreatorModal] = useState(false);
-
   const [showRegisterModal, setShowRegisterModal] = useState(false);
-  // const [loading, setLoading] = useState(true);
-
   const [showLoginModal, setShowLoginModal] = useState(false);
-
-  //const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSortAlert, setShowSortAlert] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [creatorData, setCreatorData] = useState(null);
+  const [userProfileKey, setUserProfileKey] = useState(0); // Add this new state variable
 
   const scrollAnim = new Animated.Value(0); // Tracks scroll (Y-axis) position
   const offsetAnim = new Animated.Value(0); // TODO Use later for snapping footer back in place
@@ -95,9 +93,6 @@ const App = ({/*route,*/ navigation }) => {
   });
 
   const [contentHeight, setContentHeight] = useState(0);
-
-  // Add this new state near your other states
-  const [showSortAlert, setShowSortAlert] = useState(false);
 
   useEffect(() => {
     const rows = Math.ceil(profiles.length / columns);
@@ -201,12 +196,6 @@ const App = ({/*route,*/ navigation }) => {
 
   };
 
-  // PlaceHolder for login
-  // const handleLogin = () => {
-  //   setIsLoggedIn(true);
-  //   setAccountName('Guest');
-  // };
-
   const handleLogin = () => {
     setShowLoginModal(true); // Open the modal
   };
@@ -302,6 +291,7 @@ const App = ({/*route,*/ navigation }) => {
             else {
               file_type = 'png';
             }
+            console.log("Uploading to S3 Bucket", file_type);
             try {
               // Call the backend to generate pre-signed URLs
               response = await fetch(`/aws/generate_presigned_url/${email}/${file_type}/`, {
@@ -566,87 +556,89 @@ const App = ({/*route,*/ navigation }) => {
         }
     }
 
-    response = await api.post('/api/personalized-algorithm-data/', formData, {
-      headers: {
-          'Content-Type': 'multipart/form-data',
-      },
-  });
+    // Commenting out Ranking ALgorithm for performance reasons
 
-  let liked_vids = [];
-  let bookmarked_vids = [];
+  //   response = await api.post('/api/personalized-algorithm-data/', formData, {
+  //     headers: {
+  //         'Content-Type': 'multipart/form-data',
+  //     },
+  // });
 
-  if (response?.status === 200) {
-      Alert.alert('Success', response.data?.message || `File "${file.name}" uploaded successfully!`);
+  // let liked_vids = [];
+  // let bookmarked_vids = [];
 
-      liked_vids = response.data.dict.Likes;
-      bookmarked_vids = response.data.dict.Bookmarks;
-  }
-  else {
-    Alert.alert('Error', response?.data?.error || 'An error occurred while uploading the file.');
-  }
+  // if (response?.status === 200) {
+  //     Alert.alert('Success', response.data?.message || `File "${file.name}" uploaded successfully!`);
 
-  const batchSize = 30;
-  const batches = [];
-  let results = {};
+  //     liked_vids = response.data.dict.Likes;
+  //     bookmarked_vids = response.data.dict.Bookmarks;
+  // }
+  // else {
+  //   Alert.alert('Error', response?.data?.error || 'An error occurred while uploading the file.');
+  // }
 
-  // Split likes and bookmarks into batches of 100
-  for (let i = 0; i < liked_vids.length; i += batchSize) {
-    batches.push({ Likes: liked_vids.slice(i, i + batchSize), Bookmarks: [] });
-  }
-  for (let i = 0; i < bookmarked_vids.length; i += batchSize) {
-    batches.push({ Likes: [], Bookmarks: bookmarked_vids.slice(i, i + batchSize) });
-  }
+  // const batchSize = 30;
+  // const batches = [];
+  // let results = {};
 
-  let updatedResults = {};
+  // // Split likes and bookmarks into batches of 100
+  // for (let i = 0; i < liked_vids.length; i += batchSize) {
+  //   batches.push({ Likes: liked_vids.slice(i, i + batchSize), Bookmarks: [] });
+  // }
+  // for (let i = 0; i < bookmarked_vids.length; i += batchSize) {
+  //   batches.push({ Likes: [], Bookmarks: bookmarked_vids.slice(i, i + batchSize) });
+  // }
 
-  for (let i = 0; i < batches.length; i++) {
-      const batch = batches[i];
+  // let updatedResults = {};
 
-      try {
-        const response = await api.post('/api/personalized-creator-recommendation/', JSON.stringify(batch), {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+  // for (let i = 0; i < batches.length; i++) {
+  //     const batch = batches[i];
 
-        console.log(`Batch ${i + 1} result:`, response);
+  //     try {
+  //       const response = await api.post('/api/personalized-creator-recommendation/', JSON.stringify(batch), {
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //         },
+  //       });
 
-        let scores = response.data.ranked_creators;
+  //       console.log(`Batch ${i + 1} result:`, response);
 
-        console.log("SCORES", scores);
+  //       let scores = response.data.ranked_creators;
 
-        let key = undefined
-        let value = undefined
+  //       console.log("SCORES", scores);
 
-        for (const creator of Object.values(scores)) {
-          key = creator.creator_handle
-          if (key === undefined) {
-            continue;
-          }
-          key = key.replace('@', '');
-          value = creator.score;
+  //       let key = undefined
+  //       let value = undefined
+
+  //       for (const creator of Object.values(scores)) {
+  //         key = creator.creator_handle
+  //         if (key === undefined) {
+  //           continue;
+  //         }
+  //         key = key.replace('@', '');
+  //         value = creator.score;
           
-          if (!results[key]) {
-            results[key] = 0; // Start with 0 if the key isn't present
-          }
-          results[key] += value;
-        }
+  //         if (!results[key]) {
+  //           results[key] = 0; // Start with 0 if the key isn't present
+  //         }
+  //         results[key] += value;
+  //       }
 
-        console.log('Ranked Creators:', results);
-        updatedResults = { ...algoResults };
-        for (const [key, value] of Object.entries(results)) {
-          if (updatedResults[key]) {
-            updatedResults[key] += value; // Add to existing value
-          } else {
-            updatedResults[key] = value; // Initialize new key
-          }
-        }
+  //       console.log('Ranked Creators:', results);
+  //       updatedResults = { ...algoResults };
+  //       for (const [key, value] of Object.entries(results)) {
+  //         if (updatedResults[key]) {
+  //           updatedResults[key] += value; // Add to existing value
+  //         } else {
+  //           updatedResults[key] = value; // Initialize new key
+  //         }
+  //       }
 
-      } catch (error) {
-        console.error(`Error sending batch ${i + 1}:`, error);
-      }
-  }
-  setAlgoResults(updatedResults);
+  //     } catch (error) {
+  //       console.error(`Error sending batch ${i + 1}:`, error);
+  //     }
+  // }
+  // setAlgoResults(updatedResults);
 
 };
 
@@ -654,7 +646,7 @@ const App = ({/*route,*/ navigation }) => {
     Alert.alert('Bulk Follow', `Following all users on ${platform}!`);
     // API call or bulk follow implementation here
   };
-  
+
   const BulkFollowDropdown = ({ onSelectPlatform }) => (
     <ModalDropdown
       options={['Twitter', 'Facebook', 'Instagram']}
@@ -666,6 +658,44 @@ const App = ({/*route,*/ navigation }) => {
       </TouchableOpacity>
     </ModalDropdown>
   );
+
+  // Add this function to fetch creator data
+  const fetchCreatorData = async (email) => {
+    try {
+      if (!email || email === '') {
+        setCreatorData(null);
+        return;
+      }
+
+      const response = await api.get(`/api/get-single-data/${email}/`);
+      
+      if (response.data && response.data.data && response.data.data.length > 0) {
+        const userData = response.data.data[0];
+        setCreatorData({
+          profilePicture: userData.profile_picture_url || '',
+          tiktokUsername: userData.tiktok_username || '',
+          instagramURL: userData.instagram_username || '',
+          xURL: userData.x_username || '',
+          facebookURL: userData.facebook_username || '',
+        });
+      } else {
+        setCreatorData(null);
+      }
+    } catch (error) {
+      console.error('Error fetching creator data:', error);
+      setCreatorData(null);
+    }
+  };
+
+  // Modify the modal opening logic
+  const handleCreatorModalOpen = async () => {
+    if (isLoggedIn) {
+      await fetchCreatorData(email);
+      setCreatorModal(true);
+    } else {
+      setShowAlertModal(true);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -735,17 +765,15 @@ const App = ({/*route,*/ navigation }) => {
             <View style={styles.profileWrapper}>
               <TouchableOpacity
                 style={styles.customBox}
-                onPress={() => {
-                  if (isLoggedIn) {
-                    setCreatorModal(true); // Open the Creator Modal if logged in
-                  } else {
-                    setShowAlertModal(true); // Show custom alert modal
-                  }
-                }}
+                onPress={handleCreatorModalOpen}
               >
                 <View style={styles.profileWrapper}>
                   <CustomProfileBox
+                    key={userProfileKey}
                     name={(accountName.trim()) ? `${accountName}` : 'Your Account'}
+                    shouldFetchData={true}
+                    initialData={null}
+                    email={email}
                   />
                 </View>
               </TouchableOpacity>
@@ -828,24 +856,46 @@ const App = ({/*route,*/ navigation }) => {
           setLastName('');
           setEmail('');
           setPassword('');
-          // Check for JSON file and process it
+          // Process JSON file if exists
           if (userData.json_file && Object.keys(userData.json_file).length > 0) {
             processFollowingFromJson(userData.json_file);
           }
+          setShowRegisterModal(false);
+          setShowSuccessAlert(true);
         }}
       />
 
-      {/* Replace the old Creator Modal with the new component */}
+      {/* Success Alert */}
+      <CustomAlert
+        visible={showSuccessAlert}
+        title="Welcome!"
+        message="Your account has been created successfully!"
+        // onClose={() => setShowSuccessAlert(false)}
+        onClose = {() => {
+          setShowSuccessAlert(false);
+          setShowRegisterModal(false);
+        }}
+      />
+
+      {/* Creator Modal */}
       <AddCreatorModal
         visible={creatorModal}
         onClose={() => setCreatorModal(false)}
         email={email}
+        initialData={creatorData}
+        onSubmitSuccess={async () => {  // Make this async
+          // Re-fetch creator data to update the UserProfileBox
+          if (email && email.trim() !== '') {
+            await fetchCreatorData(email);  // Wait for the fetch to complete
+            setUserProfileKey(prev => prev + 1); // Now safe to trigger re-render
+          }
+        }}
       />
 
       <FilterModal
         visible={isFilterModalVisible}
         onClose={() => setIsFilterModalVisible(false)}
-        onSelectPlatform={handleSelectPlatform} // Pass handleSelectPlatform to the modal
+        onSelectPlatform={handleSelectPlatform}
       />
 
       {showSortAlert && (
@@ -862,7 +912,6 @@ const App = ({/*route,*/ navigation }) => {
         </View>
       )}
 
-      {/* Add this near your other modals */}
       <OverwriteAlertModal
         visible={showOverwriteAlertModal}
         title={alertModalConfig.title}
@@ -871,7 +920,6 @@ const App = ({/*route,*/ navigation }) => {
       />
 
     </SafeAreaView>
-
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -17,6 +17,14 @@ interface AddCreatorModalProps {
   visible: boolean;
   onClose: () => void;
   email: string;
+  onSubmitSuccess?: () => void;
+  initialData?: {
+    profilePicture: string;
+    tiktokUsername: string;
+    instagramURL: string;
+    xURL: string;
+    facebookURL: string;
+  } | null;
 }
 
 interface CreatorForm {
@@ -30,18 +38,36 @@ interface CreatorForm {
 const AddCreatorModal: React.FC<AddCreatorModalProps> = ({ 
   visible, 
   onClose,
-  email
+  email,
+  onSubmitSuccess,
+  initialData = null
 }) => {
-  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
-  const [profileImageUrl, setProfileImageUrl] = useState<string>('');
-  const [isUrlInput, setIsUrlInput] = useState<boolean>(false);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(initialData?.profilePicture || null);
+  const [profileImageUrl, setProfileImageUrl] = useState<string>(initialData?.profilePicture || '');
+  const [isUrlInput, setIsUrlInput] = useState<boolean>(!!initialData?.profilePicture);
   const [creatorForm, setCreatorForm] = useState<CreatorForm>({
-    profilePicture: '',
-    tiktokUsername: '',
-    instagramURL: '',
-    xURL: '',
-    facebookURL: '',
+    profilePicture: initialData?.profilePicture || '',
+    tiktokUsername: initialData?.tiktokUsername || '',
+    instagramURL: initialData?.instagramURL || '',
+    xURL: initialData?.xURL || '',
+    facebookURL: initialData?.facebookURL || '',
   });
+
+  // Update form when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      setProfileImagePreview(initialData.profilePicture);
+      setProfileImageUrl(initialData.profilePicture);
+      setIsUrlInput(!!initialData.profilePicture);
+      setCreatorForm({
+        profilePicture: initialData.profilePicture,
+        tiktokUsername: initialData.tiktokUsername,
+        instagramURL: initialData.instagramURL,
+        xURL: initialData.xURL,
+        facebookURL: initialData.facebookURL,
+      });
+    }
+  }, [initialData]);
 
   const handleFileUpload = async () => {
     try {
@@ -108,8 +134,8 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
       });
 
-      if (response.status === 201) {
-        Alert.alert('Success', 'Your social media profiles have been added successfully!');
+      if (response.status === 201 || response.status === 200) {
+        Alert.alert(response.status === 201 ? 'Thank you!' : 'Success', `Your social media profiles have been ${response.status === 201 ? 'added' : 'updated'} successfully!`);
         // Reset form
         setCreatorForm({
           profilePicture: '',
@@ -121,6 +147,12 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
         setProfileImagePreview(null);
         setProfileImageUrl('');
         setIsUrlInput(false);
+        
+        // Call the success callback if provided
+        if (onSubmitSuccess) {
+          onSubmitSuccess();
+        }
+        
         onClose();
       }
     } catch (error) {

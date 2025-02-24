@@ -153,21 +153,27 @@ def create_user_profile(request):
             "json_file": json_file,
         }).execute()
 
-        # if response.data:  # If user was created successfully
-        #     # Send welcome email
-        #     try:
-        #         send_mail(
-        #             subject='Welcome to Social Media Manager!',
-        #             message=f'Hi {first_name},\n\nWelcome to Social Media Manager! Your account has been created successfully.',
-        #             from_email=settings.DEFAULT_FROM_EMAIL,
-        #             recipient_list=[email],
-        #             fail_silently=True,
-        #         )
-        #     except Exception as e:
-        #         print(f"Failed to send welcome email: {str(e)}")
-        #         # Continue even if email fails - don't block user registration
-            
-        #     return Response({"message": "User profile created successfully!"}, status=201)
+        if not response.data:
+            return Response({"error": "Failed to create user in database."}, status=500)
+
+        # Send welcome email (commented out for now)
+        # try:
+        #     send_mail(
+        #         subject='Welcome to Social Media Manager!',
+        #         message=f'Hi {first_name},\n\nWelcome to Social Media Manager! Your account has been created successfully.',
+        #         from_email=settings.DEFAULT_FROM_EMAIL,
+        #         recipient_list=[email],
+        #         fail_silently=True,
+        #     )
+        # except Exception as e:
+        #     print(f"Failed to send welcome email: {str(e)}")
+        
+        return Response({
+            "message": "User profile created successfully!",
+            "first_name": first_name,
+            "last_name": last_name,
+            "json_file": json_file
+        }, status=201)
             
     except Exception as e:
         return Response({"error": f"Failed to create user profile: {str(e)}"}, status=500)
@@ -384,7 +390,6 @@ def add_creator(request):
     instagram_username = request.data.get("instagram_username")
     x_username = request.data.get("x_username")
     facebook_username = request.data.get("facebook_username")
-    email = request.data.get("email")
 
     if not tiktok_username:
         return Response({"error": "TikTok username is required!"}, status=400)
@@ -423,3 +428,39 @@ def add_creator(request):
     except Exception as e:
         return Response({"error": f"Failed to process creator data: {str(e)}"}, status=500)
 
+@api_view(['GET'])
+def get_single_data(request, email):
+    """
+    API to get a single creator's data from the database using their email.
+
+    Args:
+        email (str): The email address of the user to fetch data for.
+
+    Returns:
+        Response: JSON response containing the user's social media data or an empty array if not found.
+    """
+
+    if email is None:
+        return Response({"error": "Email is required!"}, status=400)
+    
+    # Check if the user profile has a linked entry in socials mappings
+
+    try:
+        # Query the socials_mapping table using the email
+        user_response = supabase.table("user_profile").select("*").eq("email", email).execute()
+        
+        if not user_response.data:
+            return Response({"message": "No data found!", "data": []}, status=200)
+            
+        if user_response.data and user_response.data[0].get("creator_data_added"):
+            creator_uid = user_response.data[0].get("reference_creator")
+
+            if creator_uid:
+                response = supabase.table("socials_mapping").select("*").eq("tiktok_uid", creator_uid).execute()
+
+                if response.data:
+                    return Response({"message": "Data found!", "data": response.data}, status=200)
+
+    except Exception as e:
+        # Log the error but return empty response
+        return Response({"message": "No data found!", "data": []}, status=200)
