@@ -180,194 +180,49 @@ def create_user_profile(request):
 
 
 
-@api_view(['GET'])
-def get_profile_mappings(request, email):
-    """
-    API to fetch social media profiles for a user by email.
-    """
-    try:
-        # Get the user's profile
-        user_response = (
-            supabase.table("user_profile")
-            .select("*")
-            .eq("email", email)
-            .execute()
-        )
-
-        # Check if user exists and has creator data
-        if user_response.data and user_response.data[0].get("creator_data_added"):
-            creator_uid = user_response.data[0].get("reference_creator")
-            
-            if creator_uid:
-                # Get social media data using tiktok_uid
-                socials_response = (
-                    supabase.table("socials_mapping")
-                    .select("*")
-                    .eq("tiktok_uid", creator_uid)
-                    .execute()
-                )
-                
-                if socials_response.data:
-                    social_data = socials_response.data[0]
-                    return Response({
-                        "socials_mapping": {
-                            "facebook_username": social_data.get("facebook_username"),
-                            "instagram_username": social_data.get("instagram_username"),
-                            "x_username": social_data.get("x_username"),
-                            "reddit_username": social_data.get("reddit_username"),
-                            "profile_picture_url": social_data.get("profile_picture_url")
-                        }
-                    }, status=200)
-
-        # Return empty data if no creator data found
-        return Response({
-            "socials_mapping": {
-                "facebook_username": None,
-                "instagram_username": None,
-                "x_username": None,
-                "reddit_username": None,
-                "profile_picture_url": None
-            }
-        }, status=200)
-
-    except Exception as e:
-        print(f"Error in get_profile_mappings: {str(e)}")
-        return Response({"error": str(e)}, status=500)
-
-
 @api_view(['POST'])
-def get_following_profiles(request):
+def get_profile_mappings(request):
     """
-    API to fetch profiles with social media URLs based on usernames list.
+    API to fetch profiles with social media URLs based on usernames.
     """
     usernames = request.data.get("prof", [])
-    print(f"Received usernames: {usernames}")  # Debug log
 
     if not usernames or not isinstance(usernames, list):
-        return Response({"error": "Invalid or missing 'prof' list."}, status=400)
+        return Response({"error": "Invalid or missing 'usernames' list."}, status=400)
 
     try:
-        # Get all matching profiles from socials_mapping
         response = (
             supabase.table("socials_mapping")
             .select("*")
-            .in_("tiktok_username", usernames)
+            .in_("tiktok_username", usernames)  # Filters rows where tiktok_username matches any value in the list
             .execute()
         )
-        print(f"Found {len(response.data)} profiles")  # Debug log
-
-        result = []
-        for profile in response.data:
-            try:
-                result.append({
-                    "UserName": profile.get("tiktok_username", ""),
-                    "profile_picture": profile.get("profile_picture_url", ""),
-                    "instagram_url": profile.get("instagram_username", ""),
-                    "facebook_url": profile.get("facebook_username", ""),
-                    "twitter_url": profile.get("x_username", ""),
-                    "reddit_url": profile.get("reddit_username", "")
-                })
-            except Exception as e:
-                print(f"Error processing profile {profile}: {str(e)}")
-                continue
-
-        return Response({"profiles": result}, status=200)
-
     except Exception as e:
-        print(f"Error in get_following_profiles: {str(e)}")
         return Response({"error": str(e)}, status=500)
 
+    if not response or not response.data:
+        return Response({"profiles": []}, status=200)  # Return an empty list if no profiles are found
 
-@api_view(['POST'])
-def creator_data(request):
-    """
-    API to store creator data - creates new entry or updates existing one based on creator_data_added flag.
-    """
-    try:
-        # Extract data from request
-        email = request.data.get("email")
-        profile_picture = request.data.get("profile_picture_url")
-        tiktok_username = request.data.get("tiktok_username")
-        instagram_username = request.data.get("instagram_username")
-        x_username = request.data.get("x_username")
-        facebook_username = request.data.get("facebook_username")
+    mapping_arr = response.data
+    if not mapping_arr or not isinstance(mapping_arr, list):
+        return Response({"profiles": []}, status=200)  # Return an empty list if the data is invalid
 
-        if not email or not tiktok_username:
-            return Response({"error": "Missing required fields (email or TikTok username)!"}, status=400)
+    result = []
+    for profile in mapping_arr:
+        try:
+            result.append({
+                "UserName": profile["tiktok_username"],
+                "profile_picture": profile.get("profile_picture_url", ""),
+                "instagram_url": profile.get("instagram_username", ""),
+                "facebook_url": profile.get("facebook_username", ""),
+                "twitter_url": profile.get("x_username", ""),
+                "reddit_url": profile.get("reddit_username", ""),
+            })
+        except KeyError as e:
+            # Skip profiles with missing required keys
+            continue
 
-        # Get user profile
-        user_response = supabase.table("user_profile").select("*").eq("email", email).execute()
-
-        if not user_response.data:
-            return Response({"error": "User not found!"}, status=404)
-
-        user = user_response.data[0]
-        creator_data_added = user.get("creator_data_added", False)
-        reference_creator = user.get("reference_creator")
-
-        if not creator_data_added:
-            # Create new entry
-            # Check if entry with tiktok_username exists
-            existing_entry = supabase.table("socials_mapping").select("*").eq("tiktok_username", tiktok_username).execute()
-            
-            if existing_entry.data:
-                # Update existing entry
-                socials_response = supabase.table("socials_mapping").update({
-                    "profile_picture_url": profile_picture,
-                    "instagram_username": instagram_username,
-                    "x_username": x_username,
-                    "facebook_username": facebook_username,
-                }).eq("tiktok_username", tiktok_username).execute()
-                creator_uid = existing_entry.data[0].get("tiktok_uid")  #
-            else:
-                # Create new entry
-                socials_response = supabase.table("socials_mapping").insert({
-                    "profile_picture_url": profile_picture,
-                    "tiktok_username": tiktok_username,
-                    "instagram_username": instagram_username,
-                    "x_username": x_username,
-                    "facebook_username": facebook_username,
-                }).execute()
-                creator_uid = socials_response.data[0].get("tiktok_uid")  # Get uid from new entry
-
-            if not socials_response.data:
-                return Response({"error": "Failed to create social media mapping"}, status=500)
-            
-            # Update user profile
-            supabase.table("user_profile").update({
-                "creator_data_added": True,
-                "reference_creator": creator_uid
-            }).eq("email", email).execute()
-
-            return Response({
-                "message": "Creator data created successfully!",
-                "creator_uid": creator_uid
-            }, status=201)
-        else:
-            # Update existing entry
-            update_data = {}
-            if profile_picture:
-                update_data["profile_picture_url"] = profile_picture
-            if instagram_username:
-                update_data["instagram_username"] = instagram_username
-            if x_username:
-                update_data["x_username"] = x_username
-            if facebook_username:
-                update_data["facebook_username"] = facebook_username
-            if tiktok_username:
-                update_data["tiktok_username"] = tiktok_username
-
-            if update_data:
-                supabase.table("socials_mapping").update(update_data).eq("tiktok_uid", reference_creator).execute()
-
-            return Response({
-                "message": "Creator data updated successfully!",
-                "updated_fields": list(update_data.keys())
-            }, status=200)
-
-    except Exception as e:
-        print(f"Error in creator_data: {str(e)}")
-        return Response({"error": f"Failed to handle creator data: {str(e)}"}, status=500)
+    return Response({"profiles": result}, status=200)
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser])  # Enable file upload and parsing
@@ -525,3 +380,87 @@ def personalized_creator_recommendation(request):
     except Exception as e:
         return Response({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
 
+@api_view(['POST'])
+def add_creator(request):
+    """
+    API to add a creator directly to the socials_mapping table.
+    """
+    profile_picture_url = request.data.get("profile_picture_url")
+    tiktok_username = request.data.get("tiktok_username")
+    instagram_username = request.data.get("instagram_username")
+    x_username = request.data.get("x_username")
+    facebook_username = request.data.get("facebook_username")
+
+    if not tiktok_username:
+        return Response({"error": "TikTok username is required!"}, status=400)
+
+    try:
+        # First check if the creator already exists
+        existing_creator = supabase.table("socials_mapping").select("*").eq("tiktok_username", tiktok_username).execute()
+        
+        if existing_creator.data:
+            # Update existing creator
+            update_response = supabase.table("socials_mapping").update({
+                "profile_picture_url": profile_picture_url,
+                "instagram_username": instagram_username,
+                "x_username": x_username,
+                "facebook_username": facebook_username
+            }).eq("tiktok_username", tiktok_username).execute()
+            
+            if not update_response.data:
+                return Response({"error": "Failed to update creator profile."}, status=500)
+                
+            return Response({"message": "Creator profile updated successfully!"}, status=200)
+        
+        # If creator doesn't exist, create new entry
+        insert_response = supabase.table("socials_mapping").insert({
+            "profile_picture_url": profile_picture_url,
+            "tiktok_username": tiktok_username,
+            "instagram_username": instagram_username,
+            "x_username": x_username,
+            "facebook_username": facebook_username
+        }).execute()
+
+        if not insert_response.data:
+            return Response({"error": "Failed to create creator profile."}, status=500)
+
+        return Response({"message": "Creator profile created successfully!"}, status=201)
+    except Exception as e:
+        return Response({"error": f"Failed to process creator data: {str(e)}"}, status=500)
+
+@api_view(['GET'])
+def get_single_data(request, email):
+    """
+    API to get a single creator's data from the database using their email.
+
+    Args:
+        email (str): The email address of the user to fetch data for.
+
+    Returns:
+        Response: JSON response containing the user's social media data or an empty array if not found.
+    """
+
+    if email is None:
+        return Response({"error": "Email is required!"}, status=400)
+    
+    # Check if the user profile has a linked entry in socials mappings
+
+    try:
+        # Query the socials_mapping table using the email
+        user_response = supabase.table("user_profile").select("*").eq("email", email).execute()
+        
+        if not user_response.data:
+            return Response({"message": "No data found!", "data": []}, status=200)
+            
+        if user_response.data and user_response.data[0].get("creator_data_added"):
+            creator_uid = user_response.data[0].get("reference_creator")
+
+            if creator_uid:
+                response = supabase.table("socials_mapping").select("*").eq("tiktok_uid", creator_uid).execute()
+
+                if response.data:
+                    return Response({"message": "Data found!", "data": response.data}, status=200)
+
+    except Exception as e:
+        # Log the error but return empty response
+        return Response({"message": "No data found!", "data": []}, status=200)
