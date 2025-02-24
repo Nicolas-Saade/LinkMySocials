@@ -429,41 +429,38 @@ def add_creator(request):
         return Response({"error": f"Failed to process creator data: {str(e)}"}, status=500)
 
 @api_view(['GET'])
-def get_single_data(request, username):
+def get_single_data(request, email):
     """
-    API to get a single creator's data from the database.
+    API to get a single creator's data from the database using their email.
+
+    Args:
+        email (str): The email address of the user to fetch data for.
+
+    Returns:
+        Response: JSON response containing the user's social media data or an empty array if not found.
     """
-    if username is None:
-        return Response({"error": "Username is required!"}, status=400)
+
+    if email is None:
+        return Response({"error": "Email is required!"}, status=400)
     
+    # Check if the user profile has a linked entry in socials mappings
+
     try:
-        response = supabase.table("socials_mapping").select("*").eq("tiktok_username", username).execute()
+        # Query the socials_mapping table using the email
+        user_response = supabase.table("user_profile").select("*").eq("email", email).execute()
         
-        if not response.data:
+        if not user_response.data:
             return Response({"message": "No data found!", "data": []}, status=200)
             
+        if user_response.data and user_response.data[0].get("creator_data_added"):
+            creator_uid = user_response.data[0].get("reference_creator")
+
+            if creator_uid:
+                response = supabase.table("socials_mapping").select("*").eq("tiktok_uid", creator_uid).execute()
+
+                if response.data:
+                    return Response({"message": "Data found!", "data": response.data}, status=200)
+
     except Exception as e:
         # Log the error but return empty response
-        print(f"Error fetching data for username {username}: {str(e)}")
         return Response({"message": "No data found!", "data": []}, status=200)
-    
-    mapping_arr = response.data
-    if not mapping_arr or not isinstance(mapping_arr, list):
-        return Response({"profiles": []}, status=200)  # Return an empty list if the data is invalid
-
-    result = []
-    for profile in mapping_arr:
-        try:
-            result.append({
-                "UserName": profile["tiktok_username"],
-                "profile_picture": profile.get("profile_picture_url", ""),
-                "instagram_url": profile.get("instagram_username", ""),
-                "facebook_url": profile.get("facebook_username", ""),
-                "twitter_url": profile.get("x_username", ""),
-                "reddit_url": profile.get("reddit_username", ""),
-            })
-        except KeyError as e:
-            # Skip profiles with missing required keys
-            continue
-
-    return Response({"message": "Data fetched successfully!", "data": response.data}, status=200)

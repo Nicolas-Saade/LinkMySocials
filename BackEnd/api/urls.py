@@ -10,5 +10,5 @@ urlpatterns = [
         path('add-creator/', add_creator, name='add_creator'),
         path('personalized-algorithm-data/', personalized_Algorithm_Data, name='personalized_algorithm_Data'),
         path('personalized-creator-recommendation/', personalized_creator_recommendation, name='personalized_creator_recommendation'),
-        path('get-single-data/<str:username>/', get_single_data, name='get_single_data')
+        path('get-single-data/<str:email>/', get_single_data, name='get_single_data')
 ]

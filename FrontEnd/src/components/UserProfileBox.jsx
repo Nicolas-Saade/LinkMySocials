@@ -15,7 +15,8 @@ import placeHolder from '../assets/Neutral-placeholder-profile.jpg';
 const CustomProfileBox = ({ 
   name, 
   profilePicture,
-  initialData = null
+  initialData = null,
+  email
 }) => {
   const [userData, setUserData] = useState(initialData || {
     facebook_username: '',
@@ -24,12 +25,12 @@ const CustomProfileBox = ({
     reddit_username: '',
     profile_picture_url: ''
   });
-  const [loading, setLoading] = useState(!(!name || name === 'Your Account' || name === 'Guest'));
+  const [loading, setLoading] = useState(!(!email || email === ''));
   const [error, setError] = useState(null);
 
-  const fetchUserData = async (name) => {
-    // Only fetch if name is NOT empty, "Your Account", or "Guest"
-    if (!name || name === 'Your Account' || name === 'Guest') {
+  const fetchUserData = async (userEmail) => {
+    // Only fetch if email is NOT empty
+    if (!userEmail || userEmail === '') {
       setLoading(false);
       return;
     }
@@ -37,8 +38,8 @@ const CustomProfileBox = ({
     try {
       setLoading(true);
       setError(null);
-      console.log("FETCHING USER DATA FOR", name);
-      const response = await api.get(`/api/get-single-data/${name}/`);
+      console.log("FETCHING USER DATA FOR", userEmail);
+      const response = await api.get(`/api/get-single-data/${userEmail}/`);
 
       if (response.status === 200 && response.data.message === "No data found!") {
         setUserData({
@@ -80,8 +81,8 @@ const CustomProfileBox = ({
   };
 
   useEffect(() => {
-    fetchUserData(name);
-  }, [name]);
+    fetchUserData(email);
+  }, [email]);
 
   // Helper function to determine which icon to use
   const getSocialIcon = (platform) => {

@@ -660,14 +660,14 @@ const App = ({/*route,*/ navigation }) => {
   );
 
   // Add this function to fetch creator data
-  const fetchCreatorData = async (accountName) => {
+  const fetchCreatorData = async (email) => {
     try {
-      if (!accountName || accountName === 'Your Account') {
+      if (!email || email === '') {
         setCreatorData(null);
         return;
       }
 
-      const response = await api.get(`/api/get-single-data/${accountName}/`);
+      const response = await api.get(`/api/get-single-data/${email}/`);
       
       if (response.data && response.data.data && response.data.data.length > 0) {
         const userData = response.data.data[0];
@@ -690,7 +690,7 @@ const App = ({/*route,*/ navigation }) => {
   // Modify the modal opening logic
   const handleCreatorModalOpen = async () => {
     if (isLoggedIn) {
-      await fetchCreatorData(accountName);
+      await fetchCreatorData(email);
       setCreatorModal(true);
     } else {
       setShowAlertModal(true);
@@ -773,6 +773,7 @@ const App = ({/*route,*/ navigation }) => {
                     name={(accountName.trim()) ? `${accountName}` : 'Your Account'}
                     shouldFetchData={true}
                     initialData={null}
+                    email={email}
                   />
                 </View>
               </TouchableOpacity>
@@ -884,8 +885,8 @@ const App = ({/*route,*/ navigation }) => {
         initialData={creatorData}
         onSubmitSuccess={async () => {  // Make this async
           // Re-fetch creator data to update the UserProfileBox
-          if (accountName && accountName.trim() !== '') {
-            await fetchCreatorData(accountName);  // Wait for the fetch to complete
+          if (email && email.trim() !== '') {
+            await fetchCreatorData(email);  // Wait for the fetch to complete
             setUserProfileKey(prev => prev + 1); // Now safe to trigger re-render
           }
         }}
