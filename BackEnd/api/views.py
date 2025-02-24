@@ -390,7 +390,6 @@ def add_creator(request):
     instagram_username = request.data.get("instagram_username")
     x_username = request.data.get("x_username")
     facebook_username = request.data.get("facebook_username")
-    email = request.data.get("email")
 
     if not tiktok_username:
         return Response({"error": "TikTok username is required!"}, status=400)
@@ -429,3 +428,42 @@ def add_creator(request):
     except Exception as e:
         return Response({"error": f"Failed to process creator data: {str(e)}"}, status=500)
 
+@api_view(['GET'])
+def get_single_data(request, username):
+    """
+    API to get a single creator's data from the database.
+    """
+    if username is None:
+        return Response({"error": "Username is required!"}, status=400)
+    
+    try:
+        response = supabase.table("socials_mapping").select("*").eq("tiktok_username", username).execute()
+        
+        if not response.data:
+            return Response({"message": "No data found!", "data": []}, status=200)
+            
+    except Exception as e:
+        # Log the error but return empty response
+        print(f"Error fetching data for username {username}: {str(e)}")
+        return Response({"message": "No data found!", "data": []}, status=200)
+    
+    mapping_arr = response.data
+    if not mapping_arr or not isinstance(mapping_arr, list):
+        return Response({"profiles": []}, status=200)  # Return an empty list if the data is invalid
+
+    result = []
+    for profile in mapping_arr:
+        try:
+            result.append({
+                "UserName": profile["tiktok_username"],
+                "profile_picture": profile.get("profile_picture_url", ""),
+                "instagram_url": profile.get("instagram_username", ""),
+                "facebook_url": profile.get("facebook_username", ""),
+                "twitter_url": profile.get("x_username", ""),
+                "reddit_url": profile.get("reddit_username", ""),
+            })
+        except KeyError as e:
+            # Skip profiles with missing required keys
+            continue
+
+    return Response({"message": "Data fetched successfully!", "data": response.data}, status=200)

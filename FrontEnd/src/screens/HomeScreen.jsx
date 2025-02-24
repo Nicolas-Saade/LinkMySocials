@@ -63,14 +63,12 @@ const App = ({/*route,*/ navigation }) => {
 
   // State for Creator Form
   const [creatorModal, setCreatorModal] = useState(false);
-<<<<<<< HEAD
-=======
-
->>>>>>> main
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSortAlert, setShowSortAlert] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [creatorData, setCreatorData] = useState(null);
+  const [userProfileKey, setUserProfileKey] = useState(0); // Add this new state variable
 
   const scrollAnim = new Animated.Value(0); // Tracks scroll (Y-axis) position
   const offsetAnim = new Animated.Value(0); // TODO Use later for snapping footer back in place
@@ -661,6 +659,44 @@ const App = ({/*route,*/ navigation }) => {
     </ModalDropdown>
   );
 
+  // Add this function to fetch creator data
+  const fetchCreatorData = async (accountName) => {
+    try {
+      if (!accountName || accountName === 'Your Account') {
+        setCreatorData(null);
+        return;
+      }
+
+      const response = await api.get(`/api/get-single-data/${accountName}/`);
+      
+      if (response.data && response.data.data && response.data.data.length > 0) {
+        const userData = response.data.data[0];
+        setCreatorData({
+          profilePicture: userData.profile_picture_url || '',
+          tiktokUsername: userData.tiktok_username || '',
+          instagramURL: userData.instagram_username || '',
+          xURL: userData.x_username || '',
+          facebookURL: userData.facebook_username || '',
+        });
+      } else {
+        setCreatorData(null);
+      }
+    } catch (error) {
+      console.error('Error fetching creator data:', error);
+      setCreatorData(null);
+    }
+  };
+
+  // Modify the modal opening logic
+  const handleCreatorModalOpen = async () => {
+    if (isLoggedIn) {
+      await fetchCreatorData(accountName);
+      setCreatorModal(true);
+    } else {
+      setShowAlertModal(true);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
@@ -729,17 +765,14 @@ const App = ({/*route,*/ navigation }) => {
             <View style={styles.profileWrapper}>
               <TouchableOpacity
                 style={styles.customBox}
-                onPress={() => {
-                  if (isLoggedIn) {
-                    setCreatorModal(true); // Open the Creator Modal if logged in
-                  } else {
-                    setShowAlertModal(true); // Show custom alert modal
-                  }
-                }}
+                onPress={handleCreatorModalOpen}
               >
                 <View style={styles.profileWrapper}>
                   <CustomProfileBox
+                    key={userProfileKey}
                     name={(accountName.trim()) ? `${accountName}` : 'Your Account'}
+                    shouldFetchData={true}
+                    initialData={null}
                   />
                 </View>
               </TouchableOpacity>
@@ -848,6 +881,14 @@ const App = ({/*route,*/ navigation }) => {
         visible={creatorModal}
         onClose={() => setCreatorModal(false)}
         email={email}
+        initialData={creatorData}
+        onSubmitSuccess={async () => {  // Make this async
+          // Re-fetch creator data to update the UserProfileBox
+          if (accountName && accountName.trim() !== '') {
+            await fetchCreatorData(accountName);  // Wait for the fetch to complete
+            setUserProfileKey(prev => prev + 1); // Now safe to trigger re-render
+          }
+        }}
       />
 
       <FilterModal
