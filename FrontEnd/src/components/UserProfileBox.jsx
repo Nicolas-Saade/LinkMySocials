@@ -10,7 +10,6 @@ import twitterIconPlaceholder from '../assets/X-logo-not.png'; // Placeholder fo
 import redditIcon from '../assets/reddit-logo-reg.png'; // Regular Reddit icon
 import redditIconPlaceholder from '../assets/reddit-logo-not.png'; // Placeholder for missing URL
 import placeHolder from '../assets/Neutral-placeholder-profile.jpg';
-import plusPhoto from '../assets/Custom-placeholder-profile.png'
 
 const CustomProfileBox = ({ name, profilePicture }) => {
   const handleSocialAction = (platform) => {

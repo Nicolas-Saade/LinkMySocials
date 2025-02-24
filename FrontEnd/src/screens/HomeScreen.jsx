@@ -63,6 +63,10 @@ const App = ({/*route,*/ navigation }) => {
 
   // State for Creator Form
   const [creatorModal, setCreatorModal] = useState(false);
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSortAlert, setShowSortAlert] = useState(false);
