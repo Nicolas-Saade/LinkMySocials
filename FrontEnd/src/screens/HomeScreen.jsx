@@ -92,6 +92,14 @@ const App = ({/*route,*/ navigation }) => {
 
   const [contentHeight, setContentHeight] = useState(0);
 
+  const [userSocialProfiles, setUserSocialProfiles] = useState({
+    facebook_url: null,
+    instagram_url: null,
+    twitter_url: null,
+    reddit_url: null,
+    profile_picture: null
+  });
+
   useEffect(() => {
     const rows = Math.ceil(profiles.length / columns);
     const boxHeight = 160; // Height of each profile box
@@ -230,15 +238,17 @@ const App = ({/*route,*/ navigation }) => {
       // Process profiles in chunks of 30
       const processProfileChunk = async (chunk) => {
         try {
-          const response = await api.post(
-            '/api/profile-mapping/',
-            { prof: chunk },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            }
-          );
+          console.log("Processing chunk of profiles:", chunk);
+          // Use the new following-profiles endpoint
+          const response = await api.post('/api/following-profiles/', {
+            prof: chunk
+          }, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          console.log("Chunk response:", response.data);
           return response.data?.profiles || [];
         } catch (error) {
           console.error('Chunk processing error:', error);
@@ -657,6 +667,52 @@ const App = ({/*route,*/ navigation }) => {
     </ModalDropdown>
   );
 
+  const fetchUserProfiles = async (userEmail = email) => {
+    try {
+      console.log("Fetching profiles for email:", userEmail);
+      if (!userEmail) {
+        console.log("No email available");
+        return;
+      }
+
+      // Use the profile-mapping endpoint for user profile
+      const response = await api.get(`/api/profile-mapping/${userEmail}/`);
+      console.log("User profile API Response:", response.data);
+      
+      if (response.status === 200 && response.data.socials_mapping) {
+        const profile = response.data.socials_mapping;
+        console.log("Setting social profiles with:", profile);
+        
+        setUserSocialProfiles({
+          facebook_url: profile.facebook_username || null,
+          instagram_url: profile.instagram_username || null,
+          twitter_url: profile.x_username || null,
+          reddit_url: profile.reddit_username || null,
+          profile_picture: profile.profile_picture_url || null
+        });
+      } else {
+        // Reset social profiles if no data found
+        setUserSocialProfiles({
+          facebook_url: null,
+          instagram_url: null,
+          twitter_url: null,
+          reddit_url: null,
+          profile_picture: null
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user profiles:', error);
+      // Reset social profiles on error
+      setUserSocialProfiles({
+        facebook_url: null,
+        instagram_url: null,
+        twitter_url: null,
+        reddit_url: null,
+        profile_picture: null
+      });
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
@@ -736,6 +792,15 @@ const App = ({/*route,*/ navigation }) => {
                 <View style={styles.profileWrapper}>
                   <CustomProfileBox
                     name={(accountName.trim()) ? `${accountName}` : 'Your Account'}
+                    profilePicture={userSocialProfiles?.profile_picture}
+                    instagramUrl={userSocialProfiles?.instagram_url}
+                    facebookUrl={userSocialProfiles?.facebook_url}
+                    twitterUrl={userSocialProfiles?.twitter_url}
+                    redditUrl={userSocialProfiles?.reddit_url}
+                    onAddCredential={(platform) => {
+                      setCreatorModal(true);
+                      setSelectedPlatform(platform);
+                    }}
                   />
                 </View>
               </TouchableOpacity>
@@ -796,6 +861,10 @@ const App = ({/*route,*/ navigation }) => {
           setIsLoggedIn(true);
           setEmail(userData.email);
           setAccountName(`${userData.first_name} ${userData.last_name}`);
+          
+          // Pass the email directly to fetchUserProfiles
+          fetchUserProfiles(userData.email);
+          
           if (userData.json_file && Object.keys(userData.json_file).length > 0) {
             processFollowingFromJson(userData.json_file);
           }
@@ -844,6 +913,10 @@ const App = ({/*route,*/ navigation }) => {
         visible={creatorModal}
         onClose={() => setCreatorModal(false)}
         email={email}
+        onSuccess={() => {
+          // Refresh user profile data after adding credentials
+          fetchUserProfiles(email);
+        }}
       />
 
       <FilterModal

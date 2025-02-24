@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
 import { colors, typography, borderRadius, shadows } from '../theme';
 import facebookIcon from '../assets/Facebook-logo-reg.png'; // Regular Facebook icon
 import facebookIconPlaceholder from '../assets/facebook-logo-not.png'; // Placeholder for missing URL
@@ -12,17 +12,22 @@ import redditIconPlaceholder from '../assets/reddit-logo-not.png'; // Placeholde
 import placeHolder from '../assets/Neutral-placeholder-profile.jpg';
 import plusPhoto from '../assets/Custom-placeholder-profile.png'
 
-const CustomProfileBox = ({ name, profilePicture }) => {
-  const handleSocialAction = (platform) => {
-    Alert.alert(
-      `${platform}`,
-      `Choose an action for ${platform}:`,
-      [
-        { text: 'Redirect', onPress: () => console.log(`Redirecting to ${platform}...`) },
-        { text: 'Add Credential', onPress: () => console.log(`Adding credential for ${platform}...`) },
-      ],
-      { cancelable: true }
-    );
+const CustomProfileBox = ({ 
+  name, 
+  profilePicture, 
+  instagramUrl, 
+  facebookUrl, 
+  twitterUrl, 
+  redditUrl, 
+  onAddCredential 
+}) => {
+  const handleSocialAction = (url) => {
+      // Open the URL
+      Linking.openURL(url).catch((err) => {
+        console.error('Error opening URL:', err);
+        Alert.alert('Error', 'Could not open the URL');
+      });
+    
   };
 
   return (
@@ -31,7 +36,7 @@ const CustomProfileBox = ({ name, profilePicture }) => {
         <View style={styles.imageSection}>
           <View style={styles.imageContainer}>
             <Image 
-              source={{ uri: profilePicture || placeHolder }}
+              source={profilePicture ? { uri: profilePicture } : plusPhoto}
               style={styles.image} 
             />
             <View style={styles.plusOverlay}>
@@ -41,39 +46,36 @@ const CustomProfileBox = ({ name, profilePicture }) => {
         </View>
         
         <View style={styles.iconsSection}>
-          <TouchableOpacity onPress={() => handleSocialAction('Facebook')}>
+          <TouchableOpacity onPress={() => handleSocialAction(facebookUrl)}>
             <Image 
-              source={facebookIconPlaceholder} 
-              style={styles.icon} 
+              source={facebookUrl ? facebookIcon : facebookIconPlaceholder} 
+              style={[styles.icon, !facebookUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleSocialAction('Instagram')}>
+          
+          <TouchableOpacity onPress={() => handleSocialAction(instagramUrl)}>
             <Image 
-              source={instagramIconPlaceholder} 
-              style={styles.icon} 
+              source={instagramUrl ? instagramIcon : instagramIconPlaceholder} 
+              style={[styles.icon, !instagramUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleSocialAction('Twitter')}>
+          
+          <TouchableOpacity onPress={() => handleSocialAction(twitterUrl)}>
             <Image 
-              source={twitterIconPlaceholder} 
-              style={styles.icon} 
+              source={twitterUrl ? twitterIcon : twitterIconPlaceholder} 
+              style={[styles.icon, !twitterUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleSocialAction('Reddit')}>
+          
+          <TouchableOpacity onPress={() => handleSocialAction(redditUrl)}>
             <Image 
-              source={redditIconPlaceholder} 
-              style={styles.icon} 
+              source={redditUrl ? redditIcon : redditIconPlaceholder} 
+              style={[styles.icon, !redditUrl && styles.placeholderIcon]} 
             />
           </TouchableOpacity>
         </View>
       </View>
-      <Text 
-        style={styles.name}
-        numberOfLines={1}
-        ellipsizeMode="tail"
-      >
-        {name}
-      </Text>
+      <Text style={styles.name}>{name}</Text>
     </View>
   );
 };
@@ -142,6 +144,9 @@ const styles = StyleSheet.create({
     height: 20,
     marginBottom: 3,
     backgroundColor: 'transparent',
+  },
+  placeholderIcon: {
+    opacity: 0.5,
   },
   name: {
     color: colors.primaryText,

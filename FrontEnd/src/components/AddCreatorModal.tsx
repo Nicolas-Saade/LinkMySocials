@@ -17,6 +17,7 @@ interface AddCreatorModalProps {
   visible: boolean;
   onClose: () => void;
   email: string;
+  onSuccess?: () => void;
 }
 
 interface CreatorForm {
@@ -30,7 +31,8 @@ interface CreatorForm {
 const AddCreatorModal: React.FC<AddCreatorModalProps> = ({ 
   visible, 
   onClose,
-  email
+  email,
+  onSuccess
 }) => {
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string>('');
@@ -89,43 +91,33 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
 
   const submitCreatorData = async () => {
     try {
+      console.log("Submitting creator data with email:", email); // Debug log
+      
       // Validate required fields
-      if (!creatorForm.tiktokUsername) {
-        Alert.alert('Error', 'TikTok username is required');
+      if (!email || !creatorForm.tiktokUsername) {
+        Alert.alert('Error', 'Email and TikTok username are required!');
         return;
       }
 
-      const payload = {
-        profile_picture_url: profileImagePreview,
+      const response = await api.post('/api/creator-data/', {
+        email: email, // Make sure to include email
         tiktok_username: creatorForm.tiktokUsername,
-        instagram_username: creatorForm.instagramURL,
-        x_username: creatorForm.xURL,
-        facebook_username: creatorForm.facebookURL,
-        email: email
-      };
-
-      const response = await api.post('/api/add-creator/', payload, {
-        headers: { 'Content-Type': 'application/json' },
+        instagram_username: creatorForm.instagramURL || null,
+        facebook_username: creatorForm.facebookURL || null,
+        x_username: creatorForm.xURL || null,
+        profile_picture_url: creatorForm.profilePicture || null
       });
 
-      if (response.status === 201) {
-        Alert.alert('Success', 'Your social media profiles have been added successfully!');
-        // Reset form
-        setCreatorForm({
-          profilePicture: '',
-          tiktokUsername: '',
-          instagramURL: '',
-          xURL: '',
-          facebookURL: '',
-        });
-        setProfileImagePreview(null);
-        setProfileImageUrl('');
-        setIsUrlInput(false);
+      console.log("Creator data response:", response.data); // Debug log
+
+      if (response.status === 200 || response.status === 201) {
+        Alert.alert('Success', 'Creator data saved successfully!');
+        onSuccess?.(); // Call onSuccess callback if provided
         onClose();
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to add your social media profiles. Please try again.');
       console.error('Error submitting creator data:', error);
+      Alert.alert('Error', 'Failed to save creator data. Please try again.');
     }
   };
 
