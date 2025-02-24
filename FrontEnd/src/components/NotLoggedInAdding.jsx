@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { colors, typography, borderRadius, shadows } from '../theme';
 
 const AlertModal = ({ visible, onClose }) => {
   const popupOpacity = useRef(new Animated.Value(0)).current;
@@ -31,7 +32,7 @@ const AlertModal = ({ visible, onClose }) => {
   return (
     <Animated.View style={[styles.modalContainer, { opacity: popupOpacity }]}>
       <TouchableOpacity onPress={onClose} style={styles.closeIcon}>
-        <Text style={styles.closeIconText}>X</Text>
+        <Text style={styles.closeIconText}>×</Text>
       </TouchableOpacity>
       <Text style={styles.modalTitle}>Login Required</Text>
       <Text style={styles.modalMessage}>Please log in to add your account's credentials.</Text>
@@ -44,44 +45,45 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 40,
     right: 20,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    backgroundColor: colors.secondaryBg,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    ...shadows.md,
+    maxWidth: '90%',
+    width: 300,
   },
   closeIcon: {
     position: 'absolute',
-    top: 5,
-    right: 5,
-    padding: 5,
-    backgroundColor: '#f44336',
-    borderRadius: 50,
-    width: 25,
-    height: 25,
+    top: 8,
+    right: 8,
+    backgroundColor: colors.error,
+    borderRadius: borderRadius.round,
+    width: 24,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.sm,
   },
   closeIconText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
+    color: colors.primaryText,
+    fontSize: typography.h3.fontSize,
+    lineHeight: 24,
+    textAlign: 'center',
   },
   modalTitle: {
-    fontSize: 16,
+    color: colors.primaryText,
+    fontSize: typography.h3.fontSize,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 8,
     textAlign: 'center',
   },
   modalMessage: {
-    fontSize: 12,
+    color: colors.secondaryText,
+    fontSize: typography.body.fontSize,
     textAlign: 'center',
-    marginBottom: 15,
+    marginBottom: 5,
   },
 });
 
