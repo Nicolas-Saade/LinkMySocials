@@ -15,9 +15,20 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import os
+from email_validator import validate_email, EmailNotValidError
+from .email_utils import send_welcome_email
 
 def index_view(request):
     return render(request, "index.html")
+
+@api_view(['POST'])
+def verify_email_exists(request):
+    email = request.data.get('email')
+    try:
+        validate_email(email)
+        return Response({"exists": True}, status=200)
+    except EmailNotValidError:
+        return Response({"exists": False}, status=200)
 
 @api_view(['POST'])
 def check_email(request):
@@ -143,8 +154,10 @@ def create_user_profile(request):
         return Response({"error": "Missing required fields."}, status=400)
 
     try:
+        # Hash password
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         hashed_password = hashed_password.decode('utf-8')
+        
         response = supabase.table("user_profile").insert({
             "email": email,
             "password": hashed_password,
@@ -156,17 +169,8 @@ def create_user_profile(request):
         if not response.data:
             return Response({"error": "Failed to create user in database."}, status=500)
 
-        # Send welcome email (commented out for now)
-        # try:
-        #     send_mail(
-        #         subject='Welcome to Social Media Manager!',
-        #         message=f'Hi {first_name},\n\nWelcome to Social Media Manager! Your account has been created successfully.',
-        #         from_email=settings.DEFAULT_FROM_EMAIL,
-        #         recipient_list=[email],
-        #         fail_silently=True,
-        #     )
-        # except Exception as e:
-        #     print(f"Failed to send welcome email: {str(e)}")
+        # Send welcome email
+        send_welcome_email(email, first_name)
         
         return Response({
             "message": "User profile created successfully!",
@@ -174,7 +178,7 @@ def create_user_profile(request):
             "last_name": last_name,
             "json_file": json_file
         }, status=201)
-            
+        
     except Exception as e:
         return Response({"error": f"Failed to create user profile: {str(e)}"}, status=500)
 

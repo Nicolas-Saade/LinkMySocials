@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import upload_json_file, get_profile_mappings, create_user_profile, check_email, personalized_Algorithm_Data, personalized_creator_recommendation, add_creator, get_single_data
+from .views import upload_json_file, get_profile_mappings, create_user_profile, check_email, personalized_Algorithm_Data, personalized_creator_recommendation, add_creator, get_single_data, verify_email_exists
 
 urlpatterns = [
         path('upload-json/', upload_json_file, name='upload_json_file_no_email'),  # No email/Not logged in path
@@ -10,5 +10,6 @@ urlpatterns = [
         path('add-creator/', add_creator, name='add_creator'),
         path('personalized-algorithm-data/', personalized_Algorithm_Data, name='personalized_algorithm_Data'),
         path('personalized-creator-recommendation/', personalized_creator_recommendation, name='personalized_creator_recommendation'),
-        path('get-single-data/<str:email>/', get_single_data, name='get_single_data')
+        path('get-single-data/<str:email>/', get_single_data, name='get_single_data'),
+        path('verify-email/', verify_email_exists, name='verify_email_exists')
 ]

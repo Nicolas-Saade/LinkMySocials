@@ -40,6 +40,14 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         return;
       }
 
+      // Verify if the email exists
+      const emailExists = await api.post('/api/verify-email/', { email });
+      const exists = emailExists.data.exists;
+      if (!exists) {
+        setError('Email does not exist.');
+        return;
+      }
+
       const formData = new FormData();
       formData.append('first_name', firstName.trim());
       formData.append('last_name', lastName.trim());
