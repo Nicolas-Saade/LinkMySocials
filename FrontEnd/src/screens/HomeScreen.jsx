@@ -696,11 +696,8 @@ const App = ({/*route,*/ navigation }) => {
     // Clear previous data first to avoid showing stale information
     setCreatorData(null);
     
-    if (!email || email === '' || isLoading) {
-      console.log('Skipping creator data fetch:', { 
-        hasEmail: !!email, 
-        isLoading 
-      });
+    if (!email || email === '') {
+      console.log('Skipping creator data fetch: no email provided');
       return;
     }
     
@@ -709,30 +706,34 @@ const App = ({/*route,*/ navigation }) => {
       const response = await api.get(`/api/get-single-data/${email}/`);
       console.log('Creator data response:', response.data);
       
-      if (response.data && response.data.data && response.data.data.length > 0) {
-        const userData = response.data.data[0];
-        console.log('Setting creator data:', userData);
-        setCreatorData({
-          profilePicture: userData.profile_picture_url || '',
-          tiktokUsername: userData.tiktok_username || '',
-          instagramURL: userData.instagram_username || '',
-          xURL: userData.x_username || '',
-          facebookURL: userData.facebook_username || '',
-        });
-      } else {
-        console.log('No creator data found');
+      if (response.data?.message === "No data found!" || 
+          !response.data?.data || 
+          response.data.data.length === 0) {
+        console.log('No creator data found in API response, setting to null');
         setCreatorData(null);
+        return;
       }
+      
+      // Only set creator data if we actually have data
+      const userData = response.data.data[0];
+      console.log('Setting creator data:', userData);
+      setCreatorData({
+        profilePicture: userData.profile_picture_url || '',
+        tiktokUsername: userData.tiktok_username || '',
+        instagramURL: userData.instagram_username || '',
+        xURL: userData.x_username || '',
+        facebookURL: userData.facebook_username || '',
+      });
     } catch (error) {
       console.error('Error fetching creator data:', {
         message: error.message,
         stack: error.stack,
         response: error.response?.data
       });
+      // Explicitly set to null on error
       setCreatorData(null);
     } finally {
       setIsLoading(false);
-      console.log("Data fetching complete");
     }
   };
 
@@ -944,6 +945,7 @@ const App = ({/*route,*/ navigation }) => {
 
       {/* Creator Modal */}
       <AddCreatorModal
+        key={`creator-modal-${email}-${userProfileKey}`} // Add key to force complete re-render
         visible={creatorModal}
         onClose={() => setCreatorModal(false)}
         email={email}

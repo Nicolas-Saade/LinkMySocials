@@ -82,30 +82,61 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
 
   // Update form when initialData changes
   useEffect(() => {
-    if (initialData) {
-      setProfileImagePreview(initialData.profilePicture);
-      setProfileImageUrl(initialData.profilePicture);
-      setIsUrlInput(!!initialData.profilePicture);
-      
-      const formData = {
-        profilePicture: initialData.profilePicture || '',
-        tiktokUsername: initialData.tiktokUsername || '',
-        instagramURL: initialData.instagramURL || '',
-        xURL: initialData.xURL || '',
-        facebookURL: initialData.facebookURL || '',
+    console.log('AddCreatorModal: initialData changed', { 
+      hasData: !!initialData,
+      email
+    });
+    
+    // Reset to default/empty state when initialData is null or undefined
+    if (!initialData) {
+      console.log('Resetting form to empty state');
+      const emptyForm = {
+        profilePicture: '',
+        tiktokUsername: '',
+        instagramURL: '',
+        xURL: '',
+        facebookURL: '',
       };
       
-      setCreatorForm(formData);
-      setOriginalValues(formData);
+      setProfileImagePreview(null);
+      setProfileImageUrl('');
+      setIsUrlInput(false);
+      setCreatorForm(emptyForm);
+      setOriginalValues(emptyForm);
       
+      // Default TikTok to enabled, others to disabled
       setPlatformStatus({
-        tiktok: !!initialData.tiktokUsername,
-        instagram: !!initialData.instagramURL,
-        twitter: !!initialData.xURL,
-        facebook: !!initialData.facebookURL,
+        tiktok: true,
+        instagram: false,
+        twitter: false,
+        facebook: false,
       });
+      return;
     }
-  }, [initialData]);
+    
+    // Handle case when initialData is provided
+    setProfileImagePreview(initialData.profilePicture);
+    setProfileImageUrl(initialData.profilePicture);
+    setIsUrlInput(!!initialData.profilePicture);
+    
+    const formData = {
+      profilePicture: initialData.profilePicture || '',
+      tiktokUsername: initialData.tiktokUsername || '',
+      instagramURL: initialData.instagramURL || '',
+      xURL: initialData.xURL || '',
+      facebookURL: initialData.facebookURL || '',
+    };
+    
+    setCreatorForm(formData);
+    setOriginalValues(formData);
+    
+    setPlatformStatus({
+      tiktok: !!initialData.tiktokUsername,
+      instagram: !!initialData.instagramURL,
+      twitter: !!initialData.xURL,
+      facebook: !!initialData.facebookURL,
+    });
+  }, [initialData, email]);
 
   const handleFileUpload = async () => {
     try {
@@ -210,15 +241,16 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
   const submitCreatorData = async () => {
     try {
       // Validate required fields - at minimum TikTok username
-      if (!platformStatus.tiktok || !creatorForm.tiktokUsername) {
+      if (!platformStatus.tiktok && !creatorForm.tiktokUsername) {
         Alert.alert('Error', 'TikTok username is required');
         return;
       }
-
+      console.log("Submitting creator data");
+      
       // Prepare payload with only enabled platforms
       const payload = {
         profile_picture_url: profileImagePreview,
-        tiktok_username: platformStatus.tiktok ? creatorForm.tiktokUsername : '',
+        tiktok_username: creatorForm.tiktokUsername,
         instagram_username: platformStatus.instagram ? creatorForm.instagramURL : '',
         x_username: platformStatus.twitter ? creatorForm.xURL : '',
         facebook_username: platformStatus.facebook ? creatorForm.facebookURL : '',
@@ -391,7 +423,6 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
                     placeholder="TikTok Username (required)"
                     value={creatorForm.tiktokUsername}
                     onChangeText={(text) => setCreatorForm((prev) => ({ ...prev, tiktokUsername: text }))}
-                    editable={platformStatus.tiktok}
                   />
                 </View>
               </View>
