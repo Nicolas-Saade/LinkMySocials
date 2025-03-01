@@ -446,18 +446,15 @@ def get_single_data(request, email):
         # Query the socials_mapping table using the email
         user_response = supabase.table("user_profile").select("*").eq("email", email).execute()
 
-        print("USER RESPONSE", user_response.data)
-
         if not user_response.data:
             return Response({"message": "No data found!", "data": []}, status=200)
             
         if user_response.data[0].get("creator_data_added"):
             creator_uid = user_response.data[0].get("reference_creator")
 
-            print("CREATOR UID", creator_uid)
             if creator_uid:
                 response = supabase.table("socials_mapping").select("*").eq("tiktok_uid", creator_uid).execute()
-                print("RESPONSE", response.data)
+
 
                 if response.data:
                     return Response({"message": "Data found!", "data": response.data}, status=200)
@@ -465,4 +462,4 @@ def get_single_data(request, email):
 
     except Exception as e:
         # Log the error but return empty response
-        return Response({"message": "No data found!", "error": e}, status=200)
+        return Response({"message": "No data found!", "error": str(e)}, status=200)
