@@ -13,7 +13,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native';
-import ModalDropdown from 'react-native-modal-dropdown';
 import ProfileBox from '../components/ProfileBox';
 import CustomProfileBox from '../components/UserProfileBox';
 import { api } from '../utils';
@@ -60,7 +59,7 @@ const App = ({/*route,*/ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSavePopup, setShowSavePopup] = useState(false);
+  const [showSavePopup, setShowSavePopup] = useState(false); 
   const [isNotificationVisible, setIsNotificationVisible] = useState(false);
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [showOverwriteAlertModal, setShowOverwriteAlertModal] = useState(false);
@@ -184,18 +183,25 @@ const App = ({/*route,*/ navigation }) => {
 
   const handleShowPopup = () => {
     setShowSavePopup(true);
-    setIsNotificationVisible(true); 
+    
+    popupOpacity.setValue(0);
+    
+    Animated.timing(popupOpacity, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }
 
-    // Show popup (set opacity to 1)
-    popupOpacity.setValue(1);
-
-    // Automatically hide the popup after 5 seconds
-    setTimeout(() => {
-      popupOpacity.setValue(0);
+  const handleClosePopup = () => {
+    Animated.timing(popupOpacity, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
       setShowSavePopup(false);
-    }, 12000);
-    };
-
+    });
+  }
 
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -603,6 +609,7 @@ const App = ({/*route,*/ navigation }) => {
             
             if (!isLoggedIn) {
               setShowSavePopup(true);
+              console.log("SHOWING SAVE POPUP")
               handleShowPopup();
             }
 
@@ -1007,6 +1014,34 @@ const App = ({/*route,*/ navigation }) => {
         message={loadingMessage}
       />
 
+      {/* Save Popup */}
+      {showSavePopup && (
+        <Animated.View style={[
+          styles.notificationPopup,
+          { 
+            opacity: popupOpacity,
+            position: 'absolute',
+            bottom: 100,
+            left: 20,
+            right: 20,
+            zIndex: 9999
+          }
+        ]}>
+          <View style={styles.notificationContent}>
+            <Text style={styles.notificationText}>Login to save your data</Text>
+            <TouchableOpacity style={styles.notificationButton} onPress={handleLogin}>
+              <Text style={styles.notificationButtonText}>Login</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.popupCloseButton}
+            onPress={handleClosePopup}
+          >
+            <Text style={styles.popupCloseButtonText}>✕</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+
     </SafeAreaView>
   );
 };
@@ -1230,30 +1265,52 @@ const styles = StyleSheet.create({
     color: '#FF5722',
   },
   notificationPopup: {
-    position: 'absolute',
-    bottom: 40, // Position above the bottom edge
-    left: 20, // Margin from the left
-    right: 20, // Margin from the right
-    backgroundColor: '#FFF',
-    padding: 15, // Padding for internal spacing
-    borderRadius: 10, // Rounded corners
-    elevation: 5, // Shadow for Android
-    shadowColor: '#000', // Shadow for iOS
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    minHeight: 110, // Ensure enough height for the content
-    minWidth: 120, // Ensure enough width for the
-    maxWidth: '90%', // Limit the width to 90% of the screen
-    flexDirection: 'row', // Align items horizontally
-    alignItems: 'center', // Vertically center the content
-    justifyContent: 'space-between', // Add spacing between text and button
+    backgroundColor: colors.secondaryBg,
+    padding: 15,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
+    borderColor: colors.neonBlue,
+    marginHorizontal: 15,
+    ...shadows.lg,
+  },
+  notificationContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   notificationText: {
-    flex: 1, // Prevent text from shrinking
-    fontSize: 16, // Larger text size
-    color: '#333',
-    textAlign: 'left', // Left-align the text
+    color: colors.primaryText,
+    fontSize: typography.body.fontSize,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  notificationButton: {
+    backgroundColor: colors.neonBlue,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: borderRadius.md,
+    marginLeft: 10,
+    ...shadows.sm,
+  },
+  notificationButtonText: {
+    color: colors.primaryText,
+    fontWeight: 'bold',
+  },
+  popupCloseButton: {
+    position: 'absolute',
+    top: 5,
+    left: 5,
+    width: 25,
+    height: 25,
+    borderRadius: 12.5,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  popupCloseButtonText: {
+    color: colors.primaryText,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   greenPlusButton: {
     backgroundColor: '#4CAF50', // Green background
