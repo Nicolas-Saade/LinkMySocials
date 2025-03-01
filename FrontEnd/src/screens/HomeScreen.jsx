@@ -303,8 +303,10 @@ const App = ({/*route,*/ navigation }) => {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
-    //setAccountName('Nicolas Saade');
     setAccountName('');
+    setEmail(''); // Make sure email is cleared
+    setCreatorData(null); // Clear creator data
+    setUserProfileKey(prevKey => prevKey + 1); // Force re-render of UserProfileBox
   };
 
   const handlePPupload = async () => {
@@ -691,6 +693,9 @@ const App = ({/*route,*/ navigation }) => {
   // Add this function to fetch creator data
   const fetchCreatorData = async (email) => {
     console.log('Fetching creator data for:', email);
+    // Clear previous data first to avoid showing stale information
+    setCreatorData(null);
+    
     if (!email || email === '' || isLoading) {
       console.log('Skipping creator data fetch:', { 
         hasEmail: !!email, 
@@ -883,6 +888,7 @@ const App = ({/*route,*/ navigation }) => {
           setIsLoggedIn(true);
           setEmail(userData.email);
           setAccountName(`${userData.first_name} ${userData.last_name}`);
+          setUserProfileKey(prevKey => prevKey + 1); // Force re-render when user changes
           
           try {
             // Sequential processing to prevent race conditions
@@ -895,6 +901,7 @@ const App = ({/*route,*/ navigation }) => {
           } catch (error) {
             console.error('Error in login success handler:', error);
           }
+          console.log(`State account user data ${userData.first_name} ${userData.last_name} <-- This should be updated`);
         }}
         onRegisterClick={() => {
           setShowLoginModal(false);

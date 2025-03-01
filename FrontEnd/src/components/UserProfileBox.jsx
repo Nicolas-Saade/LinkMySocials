@@ -98,6 +98,21 @@ const CustomProfileBox = React.memo(({
     console.log('useEffect triggered with email:', email);
     let isMounted = true;
     
+    // Reset data when email changes
+    if (!email || email === '') {
+      console.log('No email provided, resetting user data');
+      setUserData({
+        facebook_username: '',
+        instagram_username: '',
+        x_username: '',
+        reddit_username: '',
+        profile_picture_url: ''
+      });
+      setSocialsUsername(null);
+      setLoading(false);
+      return;
+    }
+    
     const fetchData = async () => {
       try {
         await fetchUserData(email);
