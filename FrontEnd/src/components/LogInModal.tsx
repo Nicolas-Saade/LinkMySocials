@@ -28,25 +28,42 @@ const LoginModal: React.FC<LoginModalProps> = ({
   const [error, setError] = useState<string>('');
 
   const handleLogin = async () => {
+    console.log('Login attempt started:', { email: email.trim() });
     try {
       if (!email.trim() || !password.trim()) {
+        console.log('Login validation failed: empty fields');
         setError('Please enter both email and password.');
         return;
       }
 
+      console.log('Sending login request to server');
       //! Very bad naming, this checks email AND returns user data from DB
       const response = await api.post('/api/check-email/', { 
         email: email.trim(), 
         password: password.trim() 
       });
 
+      console.log('Login response received:', { 
+        status: response.status,
+        hasData: !!response.data,
+        dataKeys: Object.keys(response.data || {})
+      });
+
       if (response.status === 200) {
+        console.log('Login successful, clearing state');
         setError('');
         onLoginSuccess(response.data);
         setPassword(''); // Clear password for security
         onClose();
       }
     } catch (err: any) {
+      console.error('Login error:', {
+        status: err.response?.status,
+        message: err.message,
+        responseData: err.response?.data,
+        stack: err.stack
+      });
+      
       if (err.response?.status === 404) {
         setError('Email not found. Please register first.');
       } else {

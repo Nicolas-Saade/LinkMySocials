@@ -61,6 +61,9 @@ const App = ({/*route,*/ navigation }) => {
   const [algoResults, setAlgoResults] = useState({}); // Store algorithm ranking dict
   const [sortOn, setSortOn] = useState(false); // State for sorting profiles
 
+  const [isDataFetching, setIsDataFetching] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   // State for Creator Form
   const [creatorModal, setCreatorModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -197,20 +200,31 @@ const App = ({/*route,*/ navigation }) => {
   };
 
   const handleLogin = () => {
-    setShowLoginModal(true); // Open the modal
+    console.log('Opening login modal');
+    setShowLoginModal(true);
   };
 
   const processFollowingFromJson = async (jsonFile) => {
+    console.log('Processing JSON file:', { hasData: !!jsonFile });
+    if (isDataFetching) {
+      console.log('Data fetch already in progress, skipping');
+      return;
+    }
+    setIsDataFetching(true);
+    
     try {
       if (!jsonFile || Object.keys(jsonFile).length === 0) {
+        console.log('Empty or invalid JSON file');
         Alert.alert('Notice', 'The JSON file is empty or invalid.');
         return;
       }
 
       const profile = jsonFile.Profile || {};
       const followingList = profile["Following List"]?.Following || [];
+      console.log('Found following list:', { count: followingList.length });
 
       if (followingList.length === 0) {
+        console.log('No following data found');
         Alert.alert('Notice', 'No "following" data found in JSON file.');
         return;
       }
@@ -222,15 +236,19 @@ const App = ({/*route,*/ navigation }) => {
           console.warn('Invalid following entry, missing UserName:', profile);
           return null;
         }
-      }).filter(Boolean); // Remove null values
+      }).filter(Boolean);
+
+      console.log('Processed usernames:', { count: prof.length });
 
       if (prof.length === 0) {
+        console.log('No valid usernames found');
         Alert.alert('Notice', 'No valid usernames found in the following list.');
         return;
       }
 
-      // Process profiles in chunks of 30
+      // Process profiles in chunks
       const processProfileChunk = async (chunk) => {
+        console.log('Processing chunk:', { size: chunk.length });
         try {
           const response = await api.post(
             '/api/profile-mapping/',
@@ -241,6 +259,10 @@ const App = ({/*route,*/ navigation }) => {
               },
             }
           );
+          console.log('Chunk response:', { 
+            status: response.status, 
+            profilesCount: response.data?.profiles?.length 
+          });
           return response.data?.profiles || [];
         } catch (error) {
           console.error('Chunk processing error:', error);
@@ -253,6 +275,7 @@ const App = ({/*route,*/ navigation }) => {
       for (let i = 0; i < prof.length; i += 30) {
         chunks.push(prof.slice(i, i + 30));
       }
+      console.log('Created chunks:', { count: chunks.length });
 
       // Process all chunks and combine results
       const allMappedProfiles = [];
@@ -261,13 +284,19 @@ const App = ({/*route,*/ navigation }) => {
         allMappedProfiles.push(...chunkProfiles);
       }
 
+      console.log('All profiles processed:', { count: allMappedProfiles.length });
       setProfiles([...allMappedProfiles]);
       setAllProfiles([...allMappedProfiles]);
 
       Alert.alert('Success', 'Profiles successfully mapped from your data!');
     } catch (error) {
-      console.error('Profile processing error:', error.message);
+      console.error('Profile processing error:', {
+        message: error.message,
+        stack: error.stack
+      });
       Alert.alert('Error', 'Failed to process profiles.');
+    } finally {
+      setIsDataFetching(false);
     }
   };
 
@@ -661,16 +690,23 @@ const App = ({/*route,*/ navigation }) => {
 
   // Add this function to fetch creator data
   const fetchCreatorData = async (email) => {
+    console.log('Fetching creator data for:', email);
+    if (!email || email === '' || isLoading) {
+      console.log('Skipping creator data fetch:', { 
+        hasEmail: !!email, 
+        isLoading 
+      });
+      return;
+    }
+    
+    setIsLoading(true);
     try {
-      if (!email || email === '') {
-        setCreatorData(null);
-        return;
-      }
-
       const response = await api.get(`/api/get-single-data/${email}/`);
+      console.log('Creator data response:', response.data);
       
       if (response.data && response.data.data && response.data.data.length > 0) {
         const userData = response.data.data[0];
+        console.log('Setting creator data:', userData);
         setCreatorData({
           profilePicture: userData.profile_picture_url || '',
           tiktokUsername: userData.tiktok_username || '',
@@ -679,11 +715,19 @@ const App = ({/*route,*/ navigation }) => {
           facebookURL: userData.facebook_username || '',
         });
       } else {
+        console.log('No creator data found');
         setCreatorData(null);
       }
     } catch (error) {
-      console.error('Error fetching creator data:', error);
+      console.error('Error fetching creator data:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
       setCreatorData(null);
+    } finally {
+      setIsLoading(false);
+      console.log("Data fetching complete");
     }
   };
 
@@ -830,12 +874,26 @@ const App = ({/*route,*/ navigation }) => {
       <LoginModal
         visible={showLoginModal}
         onClose={() => setShowLoginModal(false)}
-        onLoginSuccess={(userData) => {
+        onLoginSuccess={async (userData) => {
+          console.log('Login success, processing user data:', { 
+            email: userData.email,
+            hasJsonFile: !!userData.json_file 
+          });
+          
           setIsLoggedIn(true);
           setEmail(userData.email);
           setAccountName(`${userData.first_name} ${userData.last_name}`);
-          if (userData.json_file && Object.keys(userData.json_file).length > 0) {
-            processFollowingFromJson(userData.json_file);
+          
+          try {
+            // Sequential processing to prevent race conditions
+            if (userData.json_file && Object.keys(userData.json_file).length > 0) {
+              console.log('Processing JSON file from login');
+              await processFollowingFromJson(userData.json_file);
+            }
+            console.log('Fetching creator data after login');
+            await fetchCreatorData(userData.email);
+          } catch (error) {
+            console.error('Error in login success handler:', error);
           }
         }}
         onRegisterClick={() => {

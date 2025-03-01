@@ -7,7 +7,10 @@ import {
   Alert,
   TouchableOpacity, 
   StyleSheet,
-  Image
+  Image,
+  ScrollView,
+  Switch,
+  Linking
 } from 'react-native';
 import { colors, typography, borderRadius, shadows } from '../theme';
 import { api } from '../utils';
@@ -35,6 +38,13 @@ interface CreatorForm {
   facebookURL: string;
 }
 
+interface PlatformStatus {
+  tiktok: boolean;
+  instagram: boolean;
+  twitter: boolean;
+  facebook: boolean;
+}
+
 const AddCreatorModal: React.FC<AddCreatorModalProps> = ({ 
   visible, 
   onClose,
@@ -53,18 +63,46 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
     facebookURL: initialData?.facebookURL || '',
   });
 
+  // Track which platforms are enabled/disabled
+  const [platformStatus, setPlatformStatus] = useState<PlatformStatus>({
+    tiktok: !!initialData?.tiktokUsername,
+    instagram: !!initialData?.instagramURL,
+    twitter: !!initialData?.xURL,
+    facebook: !!initialData?.facebookURL,
+  });
+
+  // Store original values for comparison and reset
+  const [originalValues, setOriginalValues] = useState<CreatorForm>({
+    profilePicture: initialData?.profilePicture || '',
+    tiktokUsername: initialData?.tiktokUsername || '',
+    instagramURL: initialData?.instagramURL || '',
+    xURL: initialData?.xURL || '',
+    facebookURL: initialData?.facebookURL || '',
+  });
+
   // Update form when initialData changes
   useEffect(() => {
     if (initialData) {
       setProfileImagePreview(initialData.profilePicture);
       setProfileImageUrl(initialData.profilePicture);
       setIsUrlInput(!!initialData.profilePicture);
-      setCreatorForm({
-        profilePicture: initialData.profilePicture,
-        tiktokUsername: initialData.tiktokUsername,
-        instagramURL: initialData.instagramURL,
-        xURL: initialData.xURL,
-        facebookURL: initialData.facebookURL,
+      
+      const formData = {
+        profilePicture: initialData.profilePicture || '',
+        tiktokUsername: initialData.tiktokUsername || '',
+        instagramURL: initialData.instagramURL || '',
+        xURL: initialData.xURL || '',
+        facebookURL: initialData.facebookURL || '',
+      };
+      
+      setCreatorForm(formData);
+      setOriginalValues(formData);
+      
+      setPlatformStatus({
+        tiktok: !!initialData.tiktokUsername,
+        instagram: !!initialData.instagramURL,
+        twitter: !!initialData.xURL,
+        facebook: !!initialData.facebookURL,
       });
     }
   }, [initialData]);
@@ -78,7 +116,6 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
       setProfileImageUrl('');
       setIsUrlInput(false);
 
-      // TODO: Implement S3 upload here
       // For now, use a temporary URL
       const tempUrl = URL.createObjectURL(file);
       setProfileImagePreview(tempUrl);
@@ -113,20 +150,78 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
     }));
   };
 
+  const handlePlatformToggle = (platform: keyof PlatformStatus) => {
+    setPlatformStatus(prev => ({
+      ...prev,
+      [platform]: !prev[platform]
+    }));
+
+    let fieldName: keyof CreatorForm;
+
+    switch(platform) {
+      case 'tiktok': 
+        fieldName = 'tiktokUsername';
+        break;
+      case 'instagram':
+        fieldName = 'instagramURL';
+        break;
+      case 'twitter':
+        fieldName = 'xURL';
+        break;
+      case 'facebook':
+        fieldName = 'facebookURL';
+        break;
+      default:
+        return;
+    }
+
+    // If toggling off, clear the field
+    if (platformStatus[platform]) {
+      setCreatorForm(prev => ({
+        ...prev,
+        [fieldName]: ''
+      }));
+    } else {
+      // If toggling on, restore the original value if available
+      if (originalValues[fieldName]) {
+        setCreatorForm(prev => ({
+          ...prev,
+          [fieldName]: originalValues[fieldName]
+        }));
+      }
+    }
+  };
+
+  const openPreview = (url: string) => {
+    if (!url) return;
+    
+    let fullUrl = url;
+    if (!url.startsWith('http')) {
+      fullUrl = `https://${url}`;
+    }
+
+    try {
+      Linking.openURL(fullUrl);
+    } catch (error) {
+      Alert.alert('Error', 'Could not open the URL');
+    }
+  };
+
   const submitCreatorData = async () => {
     try {
-      // Validate required fields
-      if (!creatorForm.tiktokUsername) {
+      // Validate required fields - at minimum TikTok username
+      if (!platformStatus.tiktok || !creatorForm.tiktokUsername) {
         Alert.alert('Error', 'TikTok username is required');
         return;
       }
 
+      // Prepare payload with only enabled platforms
       const payload = {
         profile_picture_url: profileImagePreview,
-        tiktok_username: creatorForm.tiktokUsername,
-        instagram_username: creatorForm.instagramURL,
-        x_username: creatorForm.xURL,
-        facebook_username: creatorForm.facebookURL,
+        tiktok_username: platformStatus.tiktok ? creatorForm.tiktokUsername : '',
+        instagram_username: platformStatus.instagram ? creatorForm.instagramURL : '',
+        x_username: platformStatus.twitter ? creatorForm.xURL : '',
+        facebook_username: platformStatus.facebook ? creatorForm.facebookURL : '',
         email: email
       };
 
@@ -135,18 +230,13 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
       });
 
       if (response.status === 201 || response.status === 200) {
-        Alert.alert(response.status === 201 ? 'Thank you!' : 'Success', `Your social media profiles have been ${response.status === 201 ? 'added' : 'updated'} successfully!`);
-        // Reset form
-        setCreatorForm({
-          profilePicture: '',
-          tiktokUsername: '',
-          instagramURL: '',
-          xURL: '',
-          facebookURL: '',
-        });
-        setProfileImagePreview(null);
-        setProfileImageUrl('');
-        setIsUrlInput(false);
+        Alert.alert(
+          response.status === 201 ? 'Creator Profile Created!' : 'Profile Updated!', 
+          `Your creator profile has been ${response.status === 201 ? 'added' : 'updated'} successfully!`
+        );
+        
+        // Update original values to match current form values
+        setOriginalValues({...creatorForm});
         
         // Call the success callback if provided
         if (onSubmitSuccess) {
@@ -156,9 +246,55 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
         onClose();
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to add your social media profiles. Please try again.');
+      Alert.alert('Error', 'Failed to update your creator profile. Please try again.');
       console.error('Error submitting creator data:', error);
     }
+  };
+
+  const getFieldValueDisplay = (value: string) => {
+    if (!value) return 'Not set';
+
+    // Try to extract platform and username using regex
+    const urlPattern = /^https?:\/\/(?:www\.)?([^.]+)\.com\/([^\/\s]+)/;
+    const match = value.match(urlPattern);
+
+    if (match) {
+      const [_, platform, username] = match;
+      return `@${username} (${platform})`;
+    }
+    
+    // If not a URL or doesn't match pattern, truncate if too long
+    if (value.length > 25) {
+      return value.substring(0, 22) + '...';
+    }
+    
+    return value;
+  };
+
+  const resetForm = () => {
+    // Reset to original values
+    setCreatorForm({...originalValues});
+    setProfileImagePreview(originalValues.profilePicture);
+    setProfileImageUrl(originalValues.profilePicture);
+    setIsUrlInput(!!originalValues.profilePicture);
+    
+    // Reset platform status based on original values
+    setPlatformStatus({
+      tiktok: !!originalValues.tiktokUsername,
+      instagram: !!originalValues.instagramURL,
+      twitter: !!originalValues.xURL,
+      facebook: !!originalValues.facebookURL,
+    });
+  };
+
+  const hasChanges = () => {
+    return (
+      creatorForm.profilePicture !== originalValues.profilePicture ||
+      creatorForm.tiktokUsername !== originalValues.tiktokUsername ||
+      creatorForm.instagramURL !== originalValues.instagramURL ||
+      creatorForm.xURL !== originalValues.xURL ||
+      creatorForm.facebookURL !== originalValues.facebookURL
+    );
   };
 
   return (
@@ -169,95 +305,281 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Add Your Social Media Profiles</Text>
-          <Text style={styles.message}>
-            Add your social media profiles to help others find and follow you across platforms.
-          </Text>
-
-          {/* Profile Picture Options */}
-          <View style={styles.profilePictureOptions}>
-            <TouchableOpacity 
-              onPress={handleFileUpload} 
-              style={[
-                styles.uploadButton,
-                !isUrlInput && styles.activeOption
-              ]}
-            >
-              <Text style={styles.uploadButtonText}>
-                Upload Picture
+        <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}>
+          <View style={styles.modalContent}>
+            <View style={styles.headerSection}>
+              <Text style={styles.modalTitle}>Creator Dashboard</Text>
+              <Text style={styles.subtitle}>
+                Manage your social media presence across platforms
               </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              onPress={handleUrlInput}
-              style={[
-                styles.uploadButton,
-                isUrlInput && styles.activeOption
-              ]}
-            >
-              <Text style={styles.uploadButtonText}>
-                Use URL
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {isUrlInput && (
-            <View style={styles.urlInputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter image URL"
-                value={profileImageUrl}
-                onChangeText={handleUrlChange}
-              />
             </View>
-          )}
-
-          {profileImagePreview && (
-            <Image source={{ uri: profileImagePreview }} style={styles.profileImagePreview} />
-          )}
-
-          <TextInput
-            style={styles.input}
-            placeholder="TikTok Username"
-            value={creatorForm.tiktokUsername}
-            onChangeText={(text) => setCreatorForm((prev) => ({ ...prev, tiktokUsername: text }))}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Instagram URL"
-            value={creatorForm.instagramURL}
-            onChangeText={(text) => setCreatorForm((prev) => ({ ...prev, instagramURL: text }))}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="X (Twitter) URL"
-            value={creatorForm.xURL}
-            onChangeText={(text) => setCreatorForm((prev) => ({ ...prev, xURL: text }))}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Facebook URL"
-            value={creatorForm.facebookURL}
-            onChangeText={(text) => setCreatorForm((prev) => ({ ...prev, facebookURL: text }))}
-          />
-
-          {/* Buttons Row */}
-          <View style={styles.buttonsRow}>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={onClose}
-            >
-              <Text style={styles.closeButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={submitCreatorData}
-            >
-              <Text style={styles.submitButtonText}>Submit</Text>
-            </TouchableOpacity>
+            
+            {/* Profile Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Profile Picture</Text>
+              <View style={styles.profileSection}>
+                <View style={styles.profileImageContainer}>
+                  {profileImagePreview ? (
+                    <Image source={{ uri: profileImagePreview }} style={styles.profileImagePreview} />
+                  ) : (
+                    <View style={styles.noImageContainer}>
+                      <Text style={styles.noImageText}>No Image</Text>
+                    </View>
+                  )}
+                </View>
+                
+                <View style={styles.profileActions}>
+                  <TouchableOpacity 
+                    onPress={handleFileUpload} 
+                    style={[styles.actionButton, !isUrlInput && styles.activeOption]}
+                  >
+                    <Text style={styles.actionButtonText}>Upload Picture</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    onPress={handleUrlInput}
+                    style={[styles.actionButton, isUrlInput && styles.activeOption]}
+                  >
+                    <Text style={styles.actionButtonText}>Use URL</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              
+              {isUrlInput && (
+                <View style={styles.urlInputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter image URL"
+                    value={profileImageUrl}
+                    onChangeText={handleUrlChange}
+                  />
+                </View>
+              )}
+            </View>
+            
+            {/* Platforms Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Connected Platforms</Text>
+              
+              {/* TikTok - Required Platform */}
+              <View style={styles.platformContainer}>
+                <View style={styles.platformHeader}>
+                  <View style={styles.platformInfo}>
+                    <Text style={styles.platformName}>TikTok</Text>
+                    <View style={[
+                      styles.statusIndicator, 
+                      platformStatus.tiktok ? styles.statusActive : styles.statusInactive
+                    ]}>
+                      <Text style={styles.statusText}>
+                        {platformStatus.tiktok ? 'Available' : 'Required'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                
+                <View style={styles.platformContent}>
+                  {!!originalValues.tiktokUsername && (
+                    <Text style={styles.currentValue}>
+                      Current: {getFieldValueDisplay(originalValues.tiktokUsername)}
+                    </Text>
+                  )}
+                  <TextInput
+                    style={[
+                      styles.input, 
+                      !platformStatus.tiktok && styles.disabledInput
+                    ]}
+                    placeholder="TikTok Username (required)"
+                    value={creatorForm.tiktokUsername}
+                    onChangeText={(text) => setCreatorForm((prev) => ({ ...prev, tiktokUsername: text }))}
+                    editable={platformStatus.tiktok}
+                  />
+                </View>
+              </View>
+              
+              {/* Instagram */}
+              <View style={styles.platformContainer}>
+                <View style={styles.platformHeader}>
+                  <View style={styles.platformInfo}>
+                    <Text style={styles.platformName}>Instagram</Text>
+                    <View style={[
+                      styles.statusIndicator, 
+                      platformStatus.instagram ? styles.statusActive : styles.statusInactive
+                    ]}>
+                      <Text style={styles.statusText}>
+                        {platformStatus.instagram ? 'Active' : 'Inactive'}
+                      </Text>
+                    </View>
+                  </View>
+                  <Switch
+                    value={platformStatus.instagram}
+                    onValueChange={() => handlePlatformToggle('instagram')}
+                    trackColor={{ false: colors.divider, true: colors.neonBlue }}
+                    thumbColor={platformStatus.instagram ? colors.neonPurple : '#f4f3f4'}
+                  />
+                </View>
+                
+                <View style={styles.platformContent}>
+                  {!!originalValues.instagramURL && (
+                    <View style={styles.valueWithPreview}>
+                      <Text style={styles.currentValue}>
+                        Current: {getFieldValueDisplay(originalValues.instagramURL)}
+                      </Text>
+                      {creatorForm.instagramURL && (
+                        <TouchableOpacity 
+                          onPress={() => openPreview(creatorForm.instagramURL)}
+                          style={styles.previewButton}
+                        >
+                          <Text style={styles.previewText}>View</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  )}
+                  <TextInput
+                    style={[
+                      styles.input, 
+                      !platformStatus.instagram && styles.disabledInput
+                    ]}
+                    placeholder="Instagram URL"
+                    value={creatorForm.instagramURL}
+                    onChangeText={(text) => setCreatorForm((prev) => ({ ...prev, instagramURL: text }))}
+                    editable={platformStatus.instagram}
+                  />
+                </View>
+              </View>
+              
+              {/* X (Twitter) */}
+              <View style={styles.platformContainer}>
+                <View style={styles.platformHeader}>
+                  <View style={styles.platformInfo}>
+                    <Text style={styles.platformName}>X (Twitter)</Text>
+                    <View style={[
+                      styles.statusIndicator, 
+                      platformStatus.twitter ? styles.statusActive : styles.statusInactive
+                    ]}>
+                      <Text style={styles.statusText}>
+                        {platformStatus.twitter ? 'Active' : 'Inactive'}
+                      </Text>
+                    </View>
+                  </View>
+                  <Switch
+                    value={platformStatus.twitter}
+                    onValueChange={() => handlePlatformToggle('twitter')}
+                    trackColor={{ false: colors.divider, true: colors.neonBlue }}
+                    thumbColor={platformStatus.twitter ? colors.neonPurple : '#f4f3f4'}
+                  />
+                </View>
+                
+                <View style={styles.platformContent}>
+                  {!!originalValues.xURL && (
+                    <View style={styles.valueWithPreview}>
+                      <Text style={styles.currentValue}>
+                        Current: {getFieldValueDisplay(originalValues.xURL)}
+                      </Text>
+                      {creatorForm.xURL && (
+                        <TouchableOpacity 
+                          onPress={() => openPreview(creatorForm.xURL)}
+                          style={styles.previewButton}
+                        >
+                          <Text style={styles.previewText}>View</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  )}
+                  <TextInput
+                    style={[
+                      styles.input, 
+                      !platformStatus.twitter && styles.disabledInput
+                    ]}
+                    placeholder="X (Twitter) URL"
+                    value={creatorForm.xURL}
+                    onChangeText={(text) => setCreatorForm((prev) => ({ ...prev, xURL: text }))}
+                    editable={platformStatus.twitter}
+                  />
+                </View>
+              </View>
+              
+              {/* Facebook */}
+              <View style={styles.platformContainer}>
+                <View style={styles.platformHeader}>
+                  <View style={styles.platformInfo}>
+                    <Text style={styles.platformName}>Facebook</Text>
+                    <View style={[
+                      styles.statusIndicator, 
+                      platformStatus.facebook ? styles.statusActive : styles.statusInactive
+                    ]}>
+                      <Text style={styles.statusText}>
+                        {platformStatus.facebook ? 'Active' : 'Inactive'}
+                      </Text>
+                    </View>
+                  </View>
+                  <Switch
+                    value={platformStatus.facebook}
+                    onValueChange={() => handlePlatformToggle('facebook')}
+                    trackColor={{ false: colors.divider, true: colors.neonBlue }}
+                    thumbColor={platformStatus.facebook ? colors.neonPurple : '#f4f3f4'}
+                  />
+                </View>
+                
+                <View style={styles.platformContent}>
+                  {!!originalValues.facebookURL && (
+                    <View style={styles.valueWithPreview}>
+                      <Text style={styles.currentValue}>
+                        Current: {getFieldValueDisplay(originalValues.facebookURL)}
+                      </Text>
+                      {creatorForm.facebookURL && (
+                        <TouchableOpacity 
+                          onPress={() => openPreview(creatorForm.facebookURL)}
+                          style={styles.previewButton}
+                        >
+                          <Text style={styles.previewText}>View</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  )}
+                  <TextInput
+                    style={[
+                      styles.input, 
+                      !platformStatus.facebook && styles.disabledInput
+                    ]}
+                    placeholder="Facebook URL"
+                    value={creatorForm.facebookURL}
+                    onChangeText={(text) => setCreatorForm((prev) => ({ ...prev, facebookURL: text }))}
+                    editable={platformStatus.facebook}
+                  />
+                </View>
+              </View>
+            </View>
+            
+            {/* Action Buttons */}
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={onClose}
+              >
+                <Text style={styles.closeButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              {hasChanges() && (
+                <TouchableOpacity
+                  style={styles.resetButton}
+                  onPress={resetForm}
+                >
+                  <Text style={styles.resetButtonText}>Reset</Text>
+                </TouchableOpacity>
+              )}
+              
+              <TouchableOpacity
+                style={[styles.submitButton, !hasChanges() && styles.disabledButton]}
+                onPress={submitCreatorData}
+                disabled={!hasChanges()}
+              >
+                <Text style={styles.submitButtonText}>
+                  {originalValues.tiktokUsername ? 'Update Profile' : 'Create Profile'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -268,28 +590,143 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalContent: {
-    width: '80%',
-    maxWidth: 400,
+    width: '90%',
+    maxWidth: 600,
     padding: 20,
     backgroundColor: colors.secondaryBg,
     borderRadius: borderRadius.lg,
     alignItems: 'center',
     ...shadows.md,
+    maxHeight: '90%',
+  },
+  headerSection: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
   },
   modalTitle: {
     color: colors.primaryText,
-    fontSize: typography.h2.fontSize,
+    fontSize: typography.body.fontSize * 1.5,
     fontWeight: 'bold',
-    marginBottom: 20,
   },
-  message: {
+  subtitle: {
     color: colors.secondaryText,
     fontSize: typography.body.fontSize,
-    marginBottom: 15,
+    marginTop: 5,
     textAlign: 'center',
+  },
+  section: {
+    width: '100%',
+    marginBottom: 25,
+  },
+  sectionTitle: {
+    color: colors.primaryText,
+    fontSize: typography.body.fontSize * 1.3,
+    fontWeight: '600',
+    marginBottom: 15,
+  },
+  profileSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  profileImageContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    overflow: 'hidden',
+    marginRight: 15,
+    ...shadows.sm,
+  },
+  profileImagePreview: {
+    width: '100%',
+    height: '100%',
+  },
+  noImageContainer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: colors.divider,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noImageText: {
+    color: colors.secondaryText,
+    fontSize: typography.body.fontSize,
+  },
+  profileActions: {
+    flex: 1,
+  },
+  actionButton: {
+    backgroundColor: colors.neonBlue,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: borderRadius.md,
+    marginBottom: 10,
+    ...shadows.sm,
+  },
+  actionButtonText: {
+    color: colors.primaryText,
+    fontSize: typography.body.fontSize,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  activeOption: {
+    backgroundColor: colors.neonPurple,
+    borderColor: colors.neonBlue,
+    borderWidth: 2,
+  },
+  urlInputContainer: {
+    width: '100%',
+    marginBottom: 10,
+  },
+  platformContainer: {
+    width: '100%',
+    marginBottom: 20,
+    backgroundColor: colors.darkBg,
+    borderRadius: borderRadius.md,
+    padding: 15,
+    ...shadows.sm,
+  },
+  platformHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  platformInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  platformName: {
+    color: colors.primaryText,
+    fontSize: typography.body.fontSize * 1.2,
+    fontWeight: 'bold',
+    marginRight: 10,
+  },
+  statusIndicator: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: borderRadius.sm,
+  },
+  statusActive: {
+    backgroundColor: colors.success,
+  },
+  statusInactive: {
+    backgroundColor: colors.divider,
+  },
+  statusText: {
+    color: colors.primaryText,
+    fontSize: typography.body.fontSize * 0.8,
+    fontWeight: 'bold',
+  },
+  platformContent: {
+    width: '100%',
   },
   input: {
     width: '100%',
@@ -299,29 +736,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.divider,
     borderRadius: borderRadius.md,
-    marginBottom: 15,
     fontSize: typography.body.fontSize,
   },
-  uploadButton: {
-    backgroundColor: colors.neonBlue,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: borderRadius.md,
-    marginBottom: 15,
-    ...shadows.sm,
+  disabledInput: {
+    backgroundColor: colors.disabledBg,
+    color: colors.secondaryText,
   },
-  uploadButtonText: {
+  currentValue: {
+    color: colors.secondaryText,
+    fontSize: typography.body.fontSize * 0.8,
+    marginBottom: 5,
+  },
+  valueWithPreview: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  previewButton: {
+    backgroundColor: colors.neonBlue,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: borderRadius.sm,
+  },
+  previewText: {
     color: colors.primaryText,
-    fontSize: typography.button.fontSize,
+    fontSize: typography.body.fontSize * 0.8,
     fontWeight: 'bold',
   },
-  profileImagePreview: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 15,
-  },
-  buttonsRow: {
+  actionButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
@@ -339,49 +782,43 @@ const styles = StyleSheet.create({
     color: colors.primaryText,
     fontWeight: 'bold',
     textAlign: 'center',
-    fontSize: typography.button.fontSize,
+    fontSize: typography.body.fontSize,
+  },
+  resetButton: {
+    backgroundColor: colors.warning,
+    padding: 12,
+    borderRadius: borderRadius.md,
+    flex: 1,
+    marginRight: 10,
+    ...shadows.sm,
+  },
+  resetButtonText: {
+    color: colors.primaryText,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: typography.body.fontSize,
   },
   submitButton: {
     backgroundColor: colors.success,
     padding: 12,
     borderRadius: borderRadius.md,
-    flex: 1,
-    marginLeft: 10,
+    flex: 1.5,
     ...shadows.sm,
   },
   submitButtonText: {
     color: colors.primaryText,
     fontWeight: 'bold',
     textAlign: 'center',
-    fontSize: typography.button.fontSize,
+    fontSize: typography.body.fontSize,
   },
-  profilePictureOptions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+  disabledButton: {
+    backgroundColor: colors.disabledBg,
+  },
+  message: {
+    color: colors.secondaryText,
+    fontSize: typography.body.fontSize,
     marginBottom: 15,
-  },
-  activeOption: {
-    backgroundColor: colors.neonPurple,
-    borderColor: colors.neonBlue,
-    borderWidth: 2,
-  },
-  urlInputContainer: {
-    width: '100%',
-    marginBottom: 15,
-  },
-  urlSubmitButton: {
-    backgroundColor: colors.neonBlue,
-    padding: 8,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    marginTop: 5,
-    ...shadows.sm,
-  },
-  urlSubmitText: {
-    color: colors.primaryText,
-    fontSize: typography.button.fontSize,
-    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

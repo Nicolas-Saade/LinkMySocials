@@ -1,3 +1,4 @@
+import pprint
 import re
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, parser_classes
@@ -439,28 +440,37 @@ def get_single_data(request, email):
     Returns:
         Response: JSON response containing the user's social media data or an empty array if not found.
     """
-
+    print("STARTED")
     if email is None:
         return Response({"error": "Email is required!"}, status=400)
     
     # Check if the user profile has a linked entry in socials mappings
-
+    print("EMAIL IS NOT NONE")
     try:
         # Query the socials_mapping table using the email
+        print("SUPABASE QUERY")
         user_response = supabase.table("user_profile").select("*").eq("email", email).execute()
-        
+        print("SUPABASE QUERY DONE\n\n\n")
+
         if not user_response.data:
             return Response({"message": "No data found!", "data": []}, status=200)
+        
+        print("NORMALLLLL", user_response.data)
             
-        if user_response.data and user_response.data[0].get("creator_data_added"):
+        if user_response.data[0].get("creator_data_added"):
+            print("YABADABDOU")
             creator_uid = user_response.data[0].get("reference_creator")
+
+            print("CRICRI")
 
             if creator_uid:
                 response = supabase.table("socials_mapping").select("*").eq("tiktok_uid", creator_uid).execute()
 
                 if response.data:
                     return Response({"message": "Data found!", "data": response.data}, status=200)
+        print("WABADIBOU")
+        return Response({"message": "No data found!", "data": []}, status=200)
 
     except Exception as e:
         # Log the error but return empty response
-        return Response({"message": "No data found!", "data": []}, status=200)
+        return Response({"message": "No data found!", "error": e}, status=200)
