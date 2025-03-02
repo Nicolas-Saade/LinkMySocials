@@ -234,7 +234,7 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
       }
 
       // Extract the base URL (removing the query parameters)
-      const s3BaseUrl = user_presigned_url.split('?')[0];
+      const s3BaseUrl = general_presigned_url.split('?')[0];
       console.log('S3 URL for profile picture:', s3BaseUrl);
       
       // Update the form with the S3 URL
