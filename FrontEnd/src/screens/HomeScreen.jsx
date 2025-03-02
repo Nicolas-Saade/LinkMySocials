@@ -475,7 +475,6 @@ const App = ({/*route,*/ navigation }) => {
         if (isLoggedIn && encodedEmail) {
             const file_type = file.type === 'application/json' ? 'json' : 'png';
             
-            console.log("FILE TYPE", file_type)
             try {
                 // Call the backend to generate pre-signed URLs
                 const s3Response = await api.post(`/aws/generate_presigned_url/${encodedEmail}/${file_type}/`);

@@ -10,7 +10,8 @@ import {
   Image,
   ScrollView,
   Switch,
-  Linking
+  Linking,
+  ActivityIndicator
 } from 'react-native';
 import { colors, typography, borderRadius, shadows } from '../theme';
 import { api } from '../utils';
@@ -55,6 +56,7 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(initialData?.profilePicture || null);
   const [profileImageUrl, setProfileImageUrl] = useState<string>(initialData?.profilePicture || '');
   const [isUrlInput, setIsUrlInput] = useState<boolean>(!!initialData?.profilePicture);
+  const [uploadingImage, setUploadingImage] = useState<boolean>(false);
   const [creatorForm, setCreatorForm] = useState<CreatorForm>({
     profilePicture: initialData?.profilePicture || '',
     tiktokUsername: initialData?.tiktokUsername || '',
@@ -139,24 +141,122 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
   }, [initialData, email]);
 
   const handleFileUpload = async () => {
+    let file;
     try {
-      const file = await handleFileSelect();
-      if (!file) return;
+      // Set loading state and select file
+      setUploadingImage(true);
+      file = await handleFileSelect('image');
+      
+      if (!file) {
+        console.error('Error', 'No file selected');
+        setUploadingImage(false);
+        return;
+      }
 
       // Clear URL input if it exists
       setProfileImageUrl('');
       setIsUrlInput(false);
 
-      // For now, use a temporary URL
-      const tempUrl = URL.createObjectURL(file);
-      setProfileImagePreview(tempUrl);
+      // Create a preview of the image immediately
+      const imagePreviewUrl = URL.createObjectURL(file);
+      setProfileImagePreview(imagePreviewUrl);
+
+      // Get file extension for content type determination
+      const getFileExtension = (file: File) => {
+        const parts = file.name.split('.');
+        return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
+      }
+
+      const fileExtension = getFileExtension(file);
+      console.log('File selected:', { name: file.name, type: file.type, extension: fileExtension }); //TODO can we jsut File.type?
+
+      // Request presigned URLs from the backend
+      const s3Response = await api.post(`/aws/generate_presigned_url/${email}/${fileExtension}/`);
+
+      if (!s3Response.data) {
+        throw new Error('Failed to generate presigned URLs');
+      }
+
+      const { user_presigned_url, general_presigned_url } = s3Response.data;
+      console.log('Received presigned URLs');
+
+      // Determine the correct content type based on file extension
+      // This must exactly match what the backend expects
+      let contentType;
+      switch (fileExtension) {
+        case 'png':
+          contentType = 'image/png';
+          break;
+        case 'jpg':
+        case 'jpeg':
+          contentType = 'image/jpeg';
+          break;
+        case 'gif':
+          contentType = 'image/gif';
+          break;
+        case 'webp':
+          contentType = 'image/webp';
+          break;
+        default:
+          // Default to jpeg if unknown
+          contentType = 'image/jpeg';
+      }
+      console.log('Using content type:', contentType);
+
+      // Upload file to user-specific folder
+      console.log('Uploading to user folder...');
+      const userUploadResponse = await fetch(user_presigned_url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': contentType,
+        },
+        body: file
+      });
+
+      if (!userUploadResponse.ok) {
+        console.error('User folder upload failed:', userUploadResponse.status, userUploadResponse.statusText);
+        throw new Error(`Failed to upload to user folder: ${userUploadResponse.statusText}`);
+      }
+
+      // Upload file to general folder
+      console.log('Uploading to general folder...');
+      const generalUploadResponse = await fetch(general_presigned_url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': contentType,
+        },
+        body: file
+      });
+      
+      if (!generalUploadResponse.ok) {
+        console.error('General folder upload failed:', generalUploadResponse.status, generalUploadResponse.statusText);
+        throw new Error(`Failed to upload to general folder: ${generalUploadResponse.statusText}`);
+      }
+
+      // Extract the base URL (removing the query parameters)
+      const s3BaseUrl = user_presigned_url.split('?')[0];
+      console.log('S3 URL for profile picture:', s3BaseUrl);
+      
+      // Update the form with the S3 URL
       setCreatorForm(prev => ({
         ...prev,
-        profilePicture: tempUrl
+        profilePicture: s3BaseUrl
       }));
+
+      // Also update the preview to show the uploaded image
+      setProfileImagePreview(s3BaseUrl);
+
+      Alert.alert('Success', 'Profile picture uploaded successfully!');
     } catch (error) {
-      console.error('Error uploading file:', error);
-      Alert.alert('Error', 'Failed to upload profile picture');
+      console.error('Error Uploading PP to AWS:', error);
+      // Clean up the preview if there was an error
+      if (profileImagePreview && !profileImagePreview.startsWith('http')) {
+        URL.revokeObjectURL(profileImagePreview);
+        setProfileImagePreview(null);
+      }
+      Alert.alert('Error', `Failed to upload profile picture: ${error.message}`);
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -363,14 +463,20 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
                 <View style={styles.profileActions}>
                   <TouchableOpacity 
                     onPress={handleFileUpload} 
-                    style={[styles.actionButton, !isUrlInput && styles.activeOption]}
+                    style={[styles.actionButton, !isUrlInput && styles.activeOption, uploadingImage && styles.disabledButton]}
+                    disabled={uploadingImage}
                   >
-                    <Text style={styles.actionButtonText}>Upload Picture</Text>
+                    {uploadingImage ? (
+                      <ActivityIndicator size="small" color={colors.primaryText} />
+                    ) : (
+                      <Text style={styles.actionButtonText}>Upload Picture</Text>
+                    )}
                   </TouchableOpacity>
                   
                   <TouchableOpacity 
                     onPress={handleUrlInput}
-                    style={[styles.actionButton, isUrlInput && styles.activeOption]}
+                    style={[styles.actionButton, isUrlInput && styles.activeOption, uploadingImage && styles.disabledButton]}
+                    disabled={uploadingImage}
                   >
                     <Text style={styles.actionButtonText}>Use URL</Text>
                   </TouchableOpacity>
@@ -380,10 +486,11 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
               {isUrlInput && (
                 <View style={styles.urlInputContainer}>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, uploadingImage && styles.disabledInput]}
                     placeholder="Enter image URL"
                     value={profileImageUrl}
                     onChangeText={handleUrlChange}
+                    editable={!uploadingImage}
                   />
                 </View>
               )}
@@ -712,6 +819,10 @@ const styles = StyleSheet.create({
     borderColor: colors.neonBlue,
     borderWidth: 2,
   },
+  disabledButton: {
+    backgroundColor: colors.disabledBg || '#444444',
+    opacity: 0.7,
+  },
   urlInputContainer: {
     width: '100%',
     marginBottom: 10,
@@ -841,9 +952,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     fontSize: typography.body.fontSize,
-  },
-  disabledButton: {
-    backgroundColor: colors.disabledBg,
   },
   message: {
     color: colors.secondaryText,
