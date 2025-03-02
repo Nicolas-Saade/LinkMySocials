@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { colors, typography, borderRadius, shadows } from '../theme';
 import { api, openUrl } from '../utils';
@@ -12,12 +12,14 @@ import redditIcon from '../assets/reddit-logo-reg.png'; // Regular Reddit icon
 import redditIconPlaceholder from '../assets/reddit-logo-not.png'; // Placeholder for missing URL
 import placeHolder from '../assets/Neutral-placeholder-profile.jpg';
 
-const CustomProfileBox = ({ 
+const CustomProfileBox = React.memo(({ 
   name, 
   profilePicture,
   initialData = null,
   email
 }) => {
+  console.log('CustomProfileBox render:', { name, email, hasInitialData: !!initialData });
+  
   const [socials_username, setSocialsUsername] = useState(null);
   const [userData, setUserData] = useState(initialData || {
     facebook_username: '',
@@ -29,20 +31,24 @@ const CustomProfileBox = ({
   const [loading, setLoading] = useState(!(!email || email === ''));
   const [error, setError] = useState(null);
 
-  const fetchUserData = async (userEmail) => {
+  const fetchUserData = useCallback(async (userEmail) => {
+    console.log('fetchUserData called with:', userEmail);
     // Only fetch if email is NOT empty
     if (!userEmail || userEmail === '') {
+      console.log('No email provided, skipping fetch');
       setLoading(false);
       return;
     }
 
     try {
+      console.log('Starting data fetch for email:', userEmail);
       setLoading(true);
       setError(null);
-      console.log("FETCHING USER DATA FOR", userEmail);
       const response = await api.get(`/api/get-single-data/${userEmail}/`);
+      console.log('API Response:', response.data);
 
       if (response.status === 200 && response.data.message === "No data found!") {
+        console.log('No data found for user');
         setUserData({
           facebook_username: '',
           instagram_username: '',
@@ -53,10 +59,12 @@ const CustomProfileBox = ({
       }
       
       if (response.data && response.data.data && response.data.data.length > 0) {
-        setUserData(response.data.data[0]);
-        console.log('Fetched user data:', response.data.data[0]);
-        setSocialsUsername(response.data.data[0].tiktok_username);
+        console.log('Data found, updating state');
+        const newUserData = response.data.data[0];
+        setUserData(newUserData);
+        setSocialsUsername(newUserData.tiktok_username);
       } else {
+        console.log('No valid data in response');
         setUserData({
           facebook_username: '',
           instagram_username: '',
@@ -65,10 +73,13 @@ const CustomProfileBox = ({
           profile_picture_url: ''
         });
       }
-
-      console.log("FETCHED RESPONSE", response.data.data[0]);
     } catch (error) {
       console.error('Error fetching user data:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
       setError(error.message);
       setUserData({
         facebook_username: '',
@@ -78,13 +89,47 @@ const CustomProfileBox = ({
         profile_picture_url: ''
       });
     } finally {
+      console.log('Fetch completed, setting loading to false');
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchUserData(email);
-  }, [email]);
+    console.log('useEffect triggered with email:', email);
+    let isMounted = true;
+    
+    // Reset data when email changes
+    if (!email || email === '') {
+      console.log('No email provided, resetting user data');
+      setUserData({
+        facebook_username: '',
+        instagram_username: '',
+        x_username: '',
+        reddit_username: '',
+        profile_picture_url: ''
+      });
+      setSocialsUsername(null);
+      setLoading(false);
+      return;
+    }
+
+    //Users/undertaker@gmail.com/TikTokData/tiktok-data.json
+    
+    const fetchData = async () => {
+      try {
+        await fetchUserData(email);
+      } catch (error) {
+        console.error('Error in useEffect fetch:', error);
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      console.log('CustomProfileBox unmounting');
+      isMounted = false;
+    };
+  }, [email, fetchUserData]);
 
   // Helper function to determine which icon to use
   const getSocialIcon = (platform) => {
@@ -105,6 +150,7 @@ const CustomProfileBox = ({
 
   // Show loading state
   if (loading) {
+    console.log('Rendering loading state');
     return (
       <View style={[styles.box, styles.loadingContainer]}>
         <Text style={styles.loadingText}>Loading...</Text>
@@ -112,6 +158,7 @@ const CustomProfileBox = ({
     );
   }
 
+  console.log('Rendering full component with userData:', userData);
   return (
     <View style={styles.box}>
       <View style={styles.contentContainer}>
@@ -179,7 +226,7 @@ const CustomProfileBox = ({
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   box: {
