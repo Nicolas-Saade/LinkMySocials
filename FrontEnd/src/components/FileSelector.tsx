@@ -5,18 +5,16 @@ import { createRoot } from 'react-dom/client';
 import { colors, typography, borderRadius, shadows } from '../theme';
 import './FileSelector.css';
 
-interface FileSelectorProps {
-  onFileSelect: (file: File | null) => void;
-  onClose: () => void;
-}
-
 interface DropzoneComponentProps {
   onFileSelect: (file: File | null) => void;
   onClose: () => void;
+  fileType?: 'json' | 'image';
 }
 
-const DropzoneComponent: React.FC<DropzoneComponentProps> = ({ onFileSelect, onClose }) => {
+const DropzoneComponent: React.FC<DropzoneComponentProps> = ({ onFileSelect, onClose, fileType = 'json' }) => {
   const [error, setError] = useState<string>('');
+
+  const isImageSelector = fileType === 'image';
 
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 1) {
@@ -24,7 +22,7 @@ const DropzoneComponent: React.FC<DropzoneComponentProps> = ({ onFileSelect, onC
       setError("");
       onClose();
     } else {
-      setError("Please select exactly one JSON file.")
+      setError(`Please select a ${isImageSelector ? 'image' : 'JSON'} file.`)
       onFileSelect(null);
       onClose();
     }
@@ -32,9 +30,9 @@ const DropzoneComponent: React.FC<DropzoneComponentProps> = ({ onFileSelect, onC
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'application/json': ['.json']
-    },
+    accept: isImageSelector 
+      ? { 'image/*': ['.jpeg', '.jpg', '.png'] }
+      : { 'application/json': ['.json'] },
     maxFiles: 1,
   });
 
@@ -71,7 +69,7 @@ const DropzoneComponent: React.FC<DropzoneComponentProps> = ({ onFileSelect, onC
           fontWeight: 'bold',
           marginBottom: '20px',
         }}>
-          Upload JSON File
+          {isImageSelector ? 'Upload Profile Picture' : 'Upload JSON File'}
         </h3>
         
         <input {...getInputProps()} />
@@ -90,7 +88,9 @@ const DropzoneComponent: React.FC<DropzoneComponentProps> = ({ onFileSelect, onC
             margin: 0,
           }}>
             {isDragActive ? 
-              'Drop the file here...' : 
+              `Drop the ${isImageSelector ? 'image' : 'file'} here...` : 
+              isImageSelector ?
+              'Drag & drop an image here, or click here to select one' :
               'Drag & drop a JSON file here, or click here to select one'
             }
           </p>
@@ -128,7 +128,7 @@ const DropzoneComponent: React.FC<DropzoneComponentProps> = ({ onFileSelect, onC
   );
 };
 
-export const handleFileSelect = async (): Promise<File | null> => {
+export const handleFileSelect = async (fileType: 'json' | 'image' = 'json'): Promise<File | null> => {
   if (Platform.OS === 'web') {
     return new Promise((resolve) => {
       const container = document.createElement('div');
@@ -159,6 +159,7 @@ export const handleFileSelect = async (): Promise<File | null> => {
             resolve(null);
             handleClose();
           }}
+          fileType={fileType}
         />
       );
     });
@@ -166,8 +167,14 @@ export const handleFileSelect = async (): Promise<File | null> => {
     try {
       // Dynamic import for native platforms
       const DocumentPicker = await import('react-native-document-picker');
+      
+      // Select the appropriate document type based on fileType
+      const docType = fileType === 'image' 
+        ? [DocumentPicker.types.images]
+        : [DocumentPicker.types.allFiles];
+        
       const results = await DocumentPicker.pick({
-        type: [DocumentPicker.types.allFiles],
+        type: docType,
       });
       return results[0] as unknown as File; // Type assertion for compatibility
     } catch (err) {

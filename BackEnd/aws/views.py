@@ -82,28 +82,31 @@ def generate_presigned_url(request, email, file_type):
             user_object_key = f"Users/{sanitized_email}/profilePics/profile-pic"
             general_object_key = f"profilePics/{sanitized_email}-profile-pic"
 
+            content_type = 'image/png' if file_type == 'png' else 'image/jpeg'
+
             # Generate pre-signed URLs for both locations
             user_presigned_url = s3_client.generate_presigned_url(
                 'put_object',
                 Params={
                     'Bucket': bucket_name,
                     'Key': user_object_key,
-                    'ContentType': 'image/png'  # Content type based on file extension
+                    'ContentType': content_type
                 },
                 ExpiresIn=604800,
                 HttpMethod='PUT'
             )
+            print("USER PRESIGNED URL", user_presigned_url)
             general_presigned_url = s3_client.generate_presigned_url(
                 'put_object',
                 Params={
                     'Bucket': bucket_name,
                     'Key': general_object_key,
-                    'ContentType': 'image/png'  # Content type based on file extension
+                    'ContentType': content_type
                 },
                 ExpiresIn=604800,
                 HttpMethod='PUT'
             )
-
+            print("GENERAL PRESIGNED URL", general_presigned_url)
             return JsonResponse({
                 'user_presigned_url': user_presigned_url,
                 'general_presigned_url': general_presigned_url,

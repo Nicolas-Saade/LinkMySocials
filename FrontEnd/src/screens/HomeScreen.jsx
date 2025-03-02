@@ -10,15 +10,12 @@ import {
   Linking,
   Dimensions,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native';
-import { Modal, TextInput } from 'react-native';
-import ModalDropdown from 'react-native-modal-dropdown';
 import ProfileBox from '../components/ProfileBox';
 import CustomProfileBox from '../components/UserProfileBox';
 import { api } from '../utils';
-import { useDropzone } from 'react-dropzone';
-import { createRoot } from 'react-dom/client';
 import SearchBar from '../components/SearchBar';
 import AlertModal from '../components/NotLoggedInAdding';
 import OverwriteAlertModal from '../components/NotLoggedInOverwriting';
@@ -36,6 +33,20 @@ const margin = 10; // Spacing between boxes
 const columns = Math.floor(screenWidth / (boxWidth + margin * 2));
 const isMobile = Platform.OS === 'ios' || Platform.OS === 'android';
 
+// Add LoadingOverlay component for better user feedback during slow operations
+const LoadingOverlay = ({ visible, message }) => {
+  if (!visible) return null;
+  
+  return (
+    <View style={styles.loadingOverlay}>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.neonBlue} />
+        <Text style={styles.loadingText}>{message || "Loading..."}</Text>
+      </View>
+    </View>
+  );
+};
+
 const App = ({/*route,*/ navigation }) => {
   const [allProfiles, setAllProfiles] = useState([]); // Keep the original list
   const [filterProfiles, setFilterProfiles] = useState([]); // Keep the list of mapped urls and their users
@@ -48,7 +59,7 @@ const App = ({/*route,*/ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSavePopup, setShowSavePopup] = useState(false);
+  const [showSavePopup, setShowSavePopup] = useState(false); 
   const [isNotificationVisible, setIsNotificationVisible] = useState(false);
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [showOverwriteAlertModal, setShowOverwriteAlertModal] = useState(false);
@@ -63,6 +74,7 @@ const App = ({/*route,*/ navigation }) => {
 
   const [isDataFetching, setIsDataFetching] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Loading..."); // Add this state for custom loading messages
 
   // State for Creator Form
   const [creatorModal, setCreatorModal] = useState(false);
@@ -171,18 +183,25 @@ const App = ({/*route,*/ navigation }) => {
 
   const handleShowPopup = () => {
     setShowSavePopup(true);
-    setIsNotificationVisible(true); 
+    
+    popupOpacity.setValue(0);
+    
+    Animated.timing(popupOpacity, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }
 
-    // Show popup (set opacity to 1)
-    popupOpacity.setValue(1);
-
-    // Automatically hide the popup after 5 seconds
-    setTimeout(() => {
-      popupOpacity.setValue(0);
+  const handleClosePopup = () => {
+    Animated.timing(popupOpacity, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
       setShowSavePopup(false);
-    }, 12000);
-    };
-
+    });
+  }
 
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -211,6 +230,7 @@ const App = ({/*route,*/ navigation }) => {
       return;
     }
     setIsDataFetching(true);
+    setLoadingMessage("Analyzing your TikTok data... This might take a moment.");
     
     try {
       if (!jsonFile || Object.keys(jsonFile).length === 0) {
@@ -247,7 +267,10 @@ const App = ({/*route,*/ navigation }) => {
       }
 
       // Process profiles in chunks
-      const processProfileChunk = async (chunk) => {
+      const processProfileChunk = async (chunk, chunkIndex, totalChunks) => {
+        // Update loading message to show progress
+        setLoadingMessage(`Finding cross-platform profiles (${chunkIndex}/${totalChunks})...`);
+        
         console.log('Processing chunk:', { size: chunk.length });
         try {
           const response = await api.post(
@@ -279,9 +302,11 @@ const App = ({/*route,*/ navigation }) => {
 
       // Process all chunks and combine results
       const allMappedProfiles = [];
+      let j = 0;
       for (const chunk of chunks) {
-        const chunkProfiles = await processProfileChunk(chunk);
+        const chunkProfiles = await processProfileChunk(chunk, j + 1, chunks.length);
         allMappedProfiles.push(...chunkProfiles);
+        j++;
       }
 
       console.log('All profiles processed:', { count: allMappedProfiles.length });
@@ -450,7 +475,6 @@ const App = ({/*route,*/ navigation }) => {
         if (isLoggedIn && encodedEmail) {
             const file_type = file.type === 'application/json' ? 'json' : 'png';
             
-            console.log("FILE TYPE", file_type)
             try {
                 // Call the backend to generate pre-signed URLs
                 const s3Response = await api.post(`/aws/generate_presigned_url/${encodedEmail}/${file_type}/`);
@@ -545,9 +569,18 @@ const App = ({/*route,*/ navigation }) => {
 
             const profileChunks = chunkArray(prof);
             const mappedProfiles = [];
-
-            for (const chunk in profileChunks) {
+            
+            // Set loading state before starting chunk processing
+            setIsLoading(true);
+            setLoadingMessage(`Preparing to map ${prof.length} profiles across platforms...`);
+            
+            let j = 0;
+            for (const chunk in profileChunks) {              
               try{
+                // Update loading message with progress information
+                setLoadingMessage(`Mapping profiles step (${j + 1}/${profileChunks.length})...
+                Found ${mappedProfiles.length} matches so far`);
+                
                 const mappedProfilesResponse = await api.post(
                     '/api/profile-mapping/',
                     { prof: profileChunks[chunk] },
@@ -559,6 +592,7 @@ const App = ({/*route,*/ navigation }) => {
                 );
                 console.log("Mapped Profiles Response", mappedProfilesResponse);
                 mappedProfiles.push(...mappedProfilesResponse.data?.profiles || []);
+                j++;
 
               } catch (error) {
                 console.error('Chunk Profile mapping error:', error.response?.data || error.message);
@@ -566,11 +600,15 @@ const App = ({/*route,*/ navigation }) => {
               }
             }
 
+            // Clear loading state after processing is complete
+            setIsLoading(false);
+            
             setProfiles([...mappedProfiles]);
             setAllProfiles([...mappedProfiles]);
             
             if (!isLoggedIn) {
               setShowSavePopup(true);
+              console.log("SHOWING SAVE POPUP")
               handleShowPopup();
             }
 
@@ -587,7 +625,7 @@ const App = ({/*route,*/ navigation }) => {
         }
     }
 
-    // Commenting out Ranking ALgorithm for performance reasons
+  // Commenting out Ranking ALgorithm for performance reasons
 
   //   response = await api.post('/api/personalized-algorithm-data/', formData, {
   //     headers: {
@@ -673,23 +711,6 @@ const App = ({/*route,*/ navigation }) => {
 
 };
 
-  const handleBulkFollow = (platform) => {
-    Alert.alert('Bulk Follow', `Following all users on ${platform}!`);
-    // API call or bulk follow implementation here
-  };
-
-  const BulkFollowDropdown = ({ onSelectPlatform }) => (
-    <ModalDropdown
-      options={['Twitter', 'Facebook', 'Instagram']}
-      dropdownStyle={styles.dropdown}
-      onSelect={(index, value) => onSelectPlatform(value)}
-    >
-      <TouchableOpacity style={styles.bulkFollowButton}>
-        <Text style={styles.bulkFollowText}>Bulk Follow</Text>
-      </TouchableOpacity>
-    </ModalDropdown>
-  );
-
   // Add this function to fetch creator data
   const fetchCreatorData = async (email) => {
     console.log('Fetching creator data for:', email);
@@ -702,6 +723,7 @@ const App = ({/*route,*/ navigation }) => {
     }
     
     setIsLoading(true);
+    setLoadingMessage("Retrieving your creator profile...");
     try {
       const response = await api.get(`/api/get-single-data/${email}/`);
       console.log('Creator data response:', response.data);
@@ -986,6 +1008,39 @@ const App = ({/*route,*/ navigation }) => {
         buttons={alertModalConfig.buttons}
       />
 
+      <LoadingOverlay
+        visible={isLoading || isDataFetching}
+        message={loadingMessage}
+      />
+
+      {/* Save Popup */}
+      {showSavePopup && (
+        <Animated.View style={[
+          styles.notificationPopup,
+          { 
+            opacity: popupOpacity,
+            position: 'absolute',
+            bottom: 100,
+            left: 20,
+            right: 20,
+            zIndex: 9999
+          }
+        ]}>
+          <View style={styles.notificationContent}>
+            <Text style={styles.notificationText}>Login to save your data</Text>
+            <TouchableOpacity style={styles.notificationButton} onPress={handleLogin}>
+              <Text style={styles.notificationButtonText}>Login</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.popupCloseButton}
+            onPress={handleClosePopup}
+          >
+            <Text style={styles.popupCloseButtonText}>✕</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+
     </SafeAreaView>
   );
 };
@@ -1209,30 +1264,52 @@ const styles = StyleSheet.create({
     color: '#FF5722',
   },
   notificationPopup: {
-    position: 'absolute',
-    bottom: 40, // Position above the bottom edge
-    left: 20, // Margin from the left
-    right: 20, // Margin from the right
-    backgroundColor: '#FFF',
-    padding: 15, // Padding for internal spacing
-    borderRadius: 10, // Rounded corners
-    elevation: 5, // Shadow for Android
-    shadowColor: '#000', // Shadow for iOS
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    minHeight: 110, // Ensure enough height for the content
-    minWidth: 120, // Ensure enough width for the
-    maxWidth: '90%', // Limit the width to 90% of the screen
-    flexDirection: 'row', // Align items horizontally
-    alignItems: 'center', // Vertically center the content
-    justifyContent: 'space-between', // Add spacing between text and button
+    backgroundColor: colors.secondaryBg,
+    padding: 15,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
+    borderColor: colors.neonBlue,
+    marginHorizontal: 15,
+    ...shadows.lg,
+  },
+  notificationContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   notificationText: {
-    flex: 1, // Prevent text from shrinking
-    fontSize: 16, // Larger text size
-    color: '#333',
-    textAlign: 'left', // Left-align the text
+    color: colors.primaryText,
+    fontSize: typography.body.fontSize,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  notificationButton: {
+    backgroundColor: colors.neonBlue,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: borderRadius.md,
+    marginLeft: 10,
+    ...shadows.sm,
+  },
+  notificationButtonText: {
+    color: colors.primaryText,
+    fontWeight: 'bold',
+  },
+  popupCloseButton: {
+    position: 'absolute',
+    top: 5,
+    left: 5,
+    width: 25,
+    height: 25,
+    borderRadius: 12.5,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  popupCloseButtonText: {
+    color: colors.primaryText,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   greenPlusButton: {
     backgroundColor: '#4CAF50', // Green background
@@ -1316,6 +1393,28 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap', // Enable text wrapping
     display: 'flex', // Enable flexbox
     marginTop: 5,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    backgroundColor: colors.secondaryBg,
+    padding: 20,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: colors.primaryText,
+    fontSize: typography.body.fontSize,
+    fontWeight: 'bold',
+    marginTop: 10,
   },
 });
 
