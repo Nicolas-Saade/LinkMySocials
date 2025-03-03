@@ -9,14 +9,16 @@ def send_welcome_email(user_email, first_name):
     message = f"""
 Hello {first_name},
 
-Welcome to LinkMySocials! We're excited to have you join our platform.
+Welcome to LinkMySocials! Thank you for signing up, we are super excited to have you join our platform.
 
 With LinkMySocials, you can:
-- Keep track of all your social media profiles in one place
+- Keep track of all your social media presence and following in one place
 - Easily share your social media presence with others
-- Discover new creators similar to ones you already follow
+- Discover new creators similar to ones you already know and love
+- Safeguard your data in case any social media platform goes down
 
-If you have any questions or need assistance, feel free to reach out to our support team.
+If you have any questions, need assistance, or would like to share your experience with us, feel free to reach out to:
+nicolasnsaade@gmail.com or jeffnahas4@gmail.com we would love to hear any feedback you have.
 
 Best regards,
 The LinkMySocials Team
