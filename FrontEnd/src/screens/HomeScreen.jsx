@@ -84,6 +84,7 @@ const App = ({/*route,*/ navigation }) => {
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [creatorData, setCreatorData] = useState(null);
   const [userProfileKey, setUserProfileKey] = useState(0); // Add this new state variable
+  const [tempJsonFile, setTempJsonFile] = useState(null); // Add this state variable
 
   const scrollAnim = new Animated.Value(0); // Tracks scroll (Y-axis) position
   const offsetAnim = new Animated.Value(0); // TODO Use later for snapping footer back in place
@@ -239,7 +240,10 @@ const App = ({/*route,*/ navigation }) => {
         return;
       }
 
-      const profile = jsonFile.Profile || {};
+      let profile = jsonFile.Profile || {};
+      if (!Object.keys(profile).includes("Following List")) {
+        profile = jsonFile.Activity || {};
+      }
       const followingList = profile["Following List"]?.Following || [];
       console.log('Found following list:', { count: followingList.length });
 
@@ -333,69 +337,6 @@ const App = ({/*route,*/ navigation }) => {
     setCreatorData(null); // Clear creator data
     setUserProfileKey(prevKey => prevKey + 1); // Force re-render of UserProfileBox
   };
-
-  const handlePPupload = async () => {
-    const file = await handleFileSelect();
-    let response = null;
-
-    try {
-        if (file) {
-            let file_type = undefined;
-            if (file.type === 'application/json') {
-              file_type = 'json';
-            }
-            else {
-              file_type = 'png';
-            }
-            console.log("Uploading to S3 Bucket", file_type);
-            try {
-              // Call the backend to generate pre-signed URLs
-              response = await fetch(`/aws/generate_presigned_url/${email}/${file_type}/`, {
-                  method: 'POST',
-              });
-      
-              if (!response.ok) {
-                  throw new Error('Failed to generate presigned URLs');
-              }
-      
-              const data = await response.json();
-      
-              // Upload file to both user-specific and general folders
-              await fetch(data.user_presigned_url, {
-                  method: 'PUT',
-                  headers: {
-                      'Content-Type': file.type, // Ensure correct MIME type
-                  },
-                  body: file
-              });
-      
-              await fetch(data.general_presigned_url, {
-                  method: 'PUT',
-                  headers: {
-                      'Content-Type': file.type, // Ensure correct MIME type
-                  },
-                  body: file
-              });
-
-              setProfileImagePreview(data.user_presigned_url);
-          } catch (error) {
-              console.error('Error uploading file:', error);
-          }
-        } else {
-            Alert.alert('Error', 'No file was selected.');
-            return;
-        }
-    } catch (error) {
-        console.error('File upload error:', error.message);
-        if (error.response) {
-            Alert.alert('Error', error.response?.data?.error || 'An unexpected error occurred.');
-        } else {
-            Alert.alert('Error', 'An unexpected error occurred.');
-        }
-        return;
-    }
-
-  }
 
   // PlaceHolder for file drop
   const handleFileDrop = async () => {

@@ -175,6 +175,7 @@ def create_user_profile(request):
             "message": "User profile created successfully!",
             "first_name": first_name,
             "last_name": last_name,
+            "email": email,
             "json_file": json_file
         }, status=201)
         

@@ -167,7 +167,7 @@ const AddCreatorModal: React.FC<AddCreatorModalProps> = ({
         return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
       }
 
-      const fileExtension = getFileExtension(file);
+      const fileExtension = getFileExtension(file).replace(/^\/+/, ''); // Remove any leading slashes
       console.log('File selected:', { name: file.name, type: file.type, extension: fileExtension }); //TODO can we jsut File.type?
 
       // Request presigned URLs from the backend
