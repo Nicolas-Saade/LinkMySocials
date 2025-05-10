@@ -24,6 +24,7 @@ node_modules
 FrontEnd/node_modules/
 FrontEnd/dist
 FrontEnd/venv/
+/FrontEnd/android/.gradle
 FrontEnd/android/.gradle/8.10.2/fileHashes/fileHashes.lock
 
 # All Env Files
