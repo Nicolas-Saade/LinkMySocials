@@ -16,9 +16,15 @@ from django.core.files.base import ContentFile
 import os
 from email_validator import validate_email, EmailNotValidError
 from .email_utils import send_welcome_email
+from django.http import HttpResponse
 
 def index_view(request):
     return render(request, "index.html")
+
+# Add Google verification file view
+def google_verification_view(request):
+    verification_content = "google-site-verification: google95c68cce4433833b.html"
+    return HttpResponse(verification_content, content_type="text/html")
 
 @api_view(['POST'])
 def verify_email_exists(request):

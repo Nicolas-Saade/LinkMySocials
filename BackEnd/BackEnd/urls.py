@@ -18,12 +18,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from api.views import index_view
+from api.views import index_view, google_verification_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     path('aws/', include('aws.urls')),
+    path("google95c68cce4433833b.html", google_verification_view, name="google-verification"),
     path("", index_view, name="home")
 ]
 
