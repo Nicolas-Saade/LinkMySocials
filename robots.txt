@@ -9,5 +9,3 @@ Allow: /
 
 User-agent: Perplexity-User
 Allow: /
-
-Sitemap: https://link-my-socials.com/sitemap.xml
