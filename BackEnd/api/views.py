@@ -21,10 +21,33 @@ from django.http import HttpResponse
 def index_view(request):
     return render(request, "index.html")
 
-# Add Google verification file view
 def google_verification_view(request):
     verification_content = "google-site-verification: google95c68cce4433833b.html"
     return HttpResponse(verification_content, content_type="text/html")
+
+def robots_txt_view(request):
+    project_root = os.path.dirname(os.path.dirname(settings.BASE_DIR))
+    robots_file_path = os.path.join(project_root, 'robots.txt')
+    
+    try:
+        with open(robots_file_path, 'r') as f:
+            robots_content = f.read()
+    except FileNotFoundError:
+        robots_content = "User-agent: *\nAllow: /"
+        
+    return HttpResponse(robots_content, content_type="text/plain")
+
+def sitemap_xml_view(request):
+    project_root = os.path.dirname(os.path.dirname(settings.BASE_DIR))
+    sitemap_file_path = os.path.join(project_root, 'sitemap.xml')
+    
+    try:
+        with open(sitemap_file_path, 'r') as f:
+            sitemap_content = f.read()
+    except FileNotFoundError:
+        return Response({"error": "Sitemap not found."}, status=404)
+        
+    return HttpResponse(sitemap_content, content_type="text/xml")
 
 @api_view(['POST'])
 def verify_email_exists(request):
